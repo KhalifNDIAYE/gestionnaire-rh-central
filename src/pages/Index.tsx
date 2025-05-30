@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
 import Dashboard from '../components/dashboard/Dashboard';
@@ -8,6 +7,9 @@ import LeaveRequestsPage from './LeaveRequestsPage';
 import PayrollPage from './PayrollPage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
+
+// Lazy load pour le module de calcul des salaires
+const SalaryCalculationPage = React.lazy(() => import('./SalaryCalculationPage'));
 
 const AppContent = () => {
   const { user } = useAuth();
@@ -27,18 +29,17 @@ const AppContent = () => {
         return <LeaveRequestsPage />;
       case 'payroll':
         return <PayrollPage />;
+      case 'salary':
+        return (
+          <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
+            <SalaryCalculationPage />
+          </React.Suspense>
+        );
       case 'profile':
         return (
           <div className="p-6">
             <h1 className="text-3xl font-bold mb-4">Mon Profil</h1>
             <p>Page de profil en cours de développement...</p>
-          </div>
-        );
-      case 'salary':
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">Calcul des Salaires</h1>
-            <p>Module de calcul des salaires en cours de développement...</p>
           </div>
         );
       case 'departments':
