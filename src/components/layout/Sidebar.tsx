@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,8 @@ import {
   ChevronRight,
   User,
   Building,
-  Clock
+  Clock,
+  BookOpen
 } from 'lucide-react';
 
 interface MenuItem {
@@ -30,6 +30,7 @@ const menuItems: MenuItem[] = [
   { id: 'leave-requests', label: 'Demandes de congés', icon: Calendar, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'payroll', label: 'Bulletins de salaire', icon: FileText, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'] },
+  { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'profile', label: 'Mon profil', icon: User, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'departments', label: 'Départements', icon: Building, roles: ['admin', 'rh'] },
   { id: 'time-tracking', label: 'Pointage', icon: Clock, roles: ['admin', 'rh', 'agent'] },

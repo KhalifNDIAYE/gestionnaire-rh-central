@@ -5,6 +5,7 @@ import Dashboard from '../components/dashboard/Dashboard';
 import EmployeesPage from './EmployeesPage';
 import LeaveRequestsPage from './LeaveRequestsPage';
 import PayrollPage from './PayrollPage';
+import MemorandumPage from './MemorandumPage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 
@@ -29,6 +30,8 @@ const AppContent = () => {
         return <LeaveRequestsPage />;
       case 'payroll':
         return <PayrollPage />;
+      case 'memorandum':
+        return <MemorandumPage />;
       case 'salary':
         return (
           <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
