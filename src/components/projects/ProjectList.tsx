@@ -32,10 +32,27 @@ const ProjectList = ({
     }
   };
 
+  const getStatusLabel = (status: Project['status']) => {
+    switch (status) {
+      case 'planning': return 'Planification';
+      case 'active': return 'Actif';
+      case 'completed': return 'Terminé';
+      case 'cancelled': return 'Annulé';
+      default: return status;
+    }
+  };
+
   const calculateProjectProgress = (project: Project) => {
     if (project.tasks.length === 0) return 0;
     const totalProgress = project.tasks.reduce((sum, task) => sum + task.progress, 0);
     return Math.round(totalProgress / project.tasks.length);
+  };
+
+  const getOverdueDeliverables = (project: Project) => {
+    const today = new Date().toISOString().split('T')[0];
+    return project.deliverables.filter(d => 
+      d.dueDate < today && d.status !== 'completed'
+    ).length;
   };
 
   return (
@@ -58,6 +75,7 @@ const ProjectList = ({
               <TableHead>Progression</TableHead>
               <TableHead>Budget</TableHead>
               <TableHead>Coût actuel</TableHead>
+              <TableHead>Livrables</TableHead>
               <TableHead>Dates</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -75,7 +93,7 @@ const ProjectList = ({
                 </TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(project.status)}>
-                    {project.status}
+                    {getStatusLabel(project.status)}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -92,6 +110,18 @@ const ProjectList = ({
                 <TableCell>
                   <div className={project.actualCost > project.budget ? 'text-red-600' : ''}>
                     {project.actualCost.toLocaleString()} €
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div className="text-sm">
+                      {project.deliverables.length} total
+                    </div>
+                    {getOverdueDeliverables(project) > 0 && (
+                      <Badge variant="destructive" className="text-xs">
+                        {getOverdueDeliverables(project)} en retard
+                      </Badge>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>

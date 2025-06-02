@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProjectList from '../components/projects/ProjectList';
 import GanttChart from '../components/projects/GanttChart';
+import DeliverablesTab from '../components/projects/DeliverablesTab';
+import ProjectFormModal from '../components/projects/ProjectFormModal';
 import { projectService, Project } from '../services/projectService';
 
 const ProjectsPage = () => {
@@ -12,6 +14,7 @@ const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -55,11 +58,10 @@ const ProjectsPage = () => {
   };
 
   const handleCreateProject = () => {
-    console.log('Créer un nouveau projet');
-    // TODO: Ouvrir un modal de création
+    setShowCreateModal(true);
   };
 
-  const canManageProjects = user?.role === 'admin' || user?.role === 'gestionnaire';
+  const canManageProjects = user?.fonction === 'admin' || user?.fonction === 'gestionnaire';
 
   if (!canManageProjects) {
     return (
@@ -88,12 +90,13 @@ const ProjectsPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Gestion des Projets</h1>
-        <p className="text-gray-600">Gérer les projets et leur progression</p>
+        <p className="text-gray-600">Gérer les projets, tâches et livrables</p>
       </div>
 
       <Tabs defaultValue="list" className="space-y-4">
         <TabsList>
           <TabsTrigger value="list">Liste des projets</TabsTrigger>
+          <TabsTrigger value="deliverables">Livrables</TabsTrigger>
           <TabsTrigger value="gantt">Diagramme de Gantt</TabsTrigger>
           <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
         </TabsList>
@@ -105,6 +108,13 @@ const ProjectsPage = () => {
             onEditProject={handleEditProject}
             onDeleteProject={handleDeleteProject}
             onCreateProject={handleCreateProject}
+          />
+        </TabsContent>
+
+        <TabsContent value="deliverables">
+          <DeliverablesTab 
+            projects={projects}
+            onRefresh={loadProjects}
           />
         </TabsContent>
 
@@ -177,9 +187,56 @@ const ProjectsPage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-sm">Livrables en retard</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {projects.reduce((count, project) => 
+                    count + project.deliverables.filter(d => 
+                      d.status === 'overdue' || 
+                      (d.dueDate < new Date().toISOString().split('T')[0] && d.status !== 'completed')
+                    ).length, 0
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-sm">Livrables à venir (7 jours)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {(() => {
+                    const today = new Date();
+                    const futureDate = new Date();
+                    futureDate.setDate(today.getDate() + 7);
+                    const todayStr = today.toISOString().split('T')[0];
+                    const futureDateStr = futureDate.toISOString().split('T')[0];
+                    
+                    return projects.reduce((count, project) => 
+                      count + project.deliverables.filter(d => 
+                        d.dueDate >= todayStr && 
+                        d.dueDate <= futureDateStr && 
+                        d.status !== 'completed'
+                      ).length, 0
+                    );
+                  })()}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
+
+      <ProjectFormModal 
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onProjectCreated={loadProjects}
+      />
     </div>
   );
 };

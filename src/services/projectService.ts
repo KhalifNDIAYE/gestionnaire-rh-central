@@ -13,6 +13,17 @@ export interface Task {
   status: 'not-started' | 'in-progress' | 'completed' | 'on-hold';
 }
 
+export interface Deliverable {
+  id: string;
+  name: string;
+  description: string;
+  dueDate: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'overdue';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  completedDate?: string;
+  assignedTo?: string[]; // IDs des responsables
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -27,6 +38,7 @@ export interface Project {
   consultants: string[]; // IDs des consultants
   tasks: Task[];
   milestones: Milestone[];
+  deliverables: Deliverable[];
 }
 
 export interface Milestone {
@@ -35,6 +47,16 @@ export interface Milestone {
   date: string;
   description: string;
   isCompleted: boolean;
+}
+
+export interface ProjectNotification {
+  id: string;
+  projectId: string;
+  deliverableId: string;
+  type: 'deadline-warning' | 'overdue' | 'completed';
+  message: string;
+  createdDate: string;
+  read: boolean;
 }
 
 // Mock data pour les projets
@@ -87,6 +109,27 @@ const mockProjects: Project[] = [
         description: 'Validation de l\'analyse des besoins',
         isCompleted: true
       }
+    ],
+    deliverables: [
+      {
+        id: 'deliverable-1',
+        name: 'Rapport d\'analyse',
+        description: 'Document complet d\'analyse des besoins',
+        dueDate: '2024-02-15',
+        status: 'completed',
+        priority: 'high',
+        completedDate: '2024-02-14',
+        assignedTo: ['consultant-1']
+      },
+      {
+        id: 'deliverable-2',
+        name: 'Configuration de test',
+        description: 'Environnement de test configuré',
+        dueDate: '2024-04-30',
+        status: 'in-progress',
+        priority: 'high',
+        assignedTo: ['2', '4']
+      }
     ]
   },
   {
@@ -102,9 +145,22 @@ const mockProjects: Project[] = [
     team: ['4'],
     consultants: ['consultant-2'],
     tasks: [],
-    milestones: []
+    milestones: [],
+    deliverables: [
+      {
+        id: 'deliverable-3',
+        name: 'Maquettes UI/UX',
+        description: 'Conception des interfaces utilisateur',
+        dueDate: '2024-03-15',
+        status: 'pending',
+        priority: 'medium',
+        assignedTo: ['consultant-2']
+      }
+    ]
   }
 ];
+
+const mockNotifications: ProjectNotification[] = [];
 
 export const projectService = {
   getProjects: (): Promise<Project[]> => {
@@ -165,6 +221,105 @@ export const projectService = {
     if (progress === 100) task.status = 'completed';
     else if (progress > 0) task.status = 'in-progress';
 
+    return Promise.resolve(true);
+  },
+
+  // Nouvelles méthodes pour les livrables
+  addDeliverable: (projectId: string, deliverable: Omit<Deliverable, 'id'>): Promise<Deliverable | null> => {
+    const project = mockProjects.find(p => p.id === projectId);
+    if (!project) return Promise.resolve(null);
+
+    const newDeliverable = {
+      ...deliverable,
+      id: `deliverable-${Date.now()}`
+    };
+    
+    project.deliverables.push(newDeliverable);
+    return Promise.resolve(newDeliverable);
+  },
+
+  updateDeliverable: (projectId: string, deliverableId: string, updates: Partial<Deliverable>): Promise<boolean> => {
+    const project = mockProjects.find(p => p.id === projectId);
+    if (!project) return Promise.resolve(false);
+
+    const deliverableIndex = project.deliverables.findIndex(d => d.id === deliverableId);
+    if (deliverableIndex === -1) return Promise.resolve(false);
+
+    project.deliverables[deliverableIndex] = { 
+      ...project.deliverables[deliverableIndex], 
+      ...updates 
+    };
+
+    // Si le livrable est marqué comme terminé, ajouter la date de completion
+    if (updates.status === 'completed' && !project.deliverables[deliverableIndex].completedDate) {
+      project.deliverables[deliverableIndex].completedDate = new Date().toISOString().split('T')[0];
+    }
+
+    return Promise.resolve(true);
+  },
+
+  getOverdueDeliverables: (): Promise<{ project: Project; deliverable: Deliverable }[]> => {
+    const today = new Date().toISOString().split('T')[0];
+    const overdueDeliverables: { project: Project; deliverable: Deliverable }[] = [];
+
+    mockProjects.forEach(project => {
+      project.deliverables.forEach(deliverable => {
+        if (deliverable.dueDate < today && deliverable.status !== 'completed') {
+          // Marquer automatiquement comme en retard
+          deliverable.status = 'overdue';
+          overdueDeliverables.push({ project, deliverable });
+        }
+      });
+    });
+
+    return Promise.resolve(overdueDeliverables);
+  },
+
+  getUpcomingDeadlines: (days: number = 7): Promise<{ project: Project; deliverable: Deliverable }[]> => {
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + days);
+    
+    const todayStr = today.toISOString().split('T')[0];
+    const futureDateStr = futureDate.toISOString().split('T')[0];
+    
+    const upcomingDeliverables: { project: Project; deliverable: Deliverable }[] = [];
+
+    mockProjects.forEach(project => {
+      project.deliverables.forEach(deliverable => {
+        if (deliverable.dueDate >= todayStr && 
+            deliverable.dueDate <= futureDateStr && 
+            deliverable.status !== 'completed') {
+          upcomingDeliverables.push({ project, deliverable });
+        }
+      });
+    });
+
+    return Promise.resolve(upcomingDeliverables);
+  },
+
+  // Gestion des notifications
+  getNotifications: (): Promise<ProjectNotification[]> => {
+    return Promise.resolve(mockNotifications);
+  },
+
+  createNotification: (notification: Omit<ProjectNotification, 'id' | 'createdDate' | 'read'>): Promise<ProjectNotification> => {
+    const newNotification: ProjectNotification = {
+      ...notification,
+      id: `notification-${Date.now()}`,
+      createdDate: new Date().toISOString(),
+      read: false
+    };
+    
+    mockNotifications.push(newNotification);
+    return Promise.resolve(newNotification);
+  },
+
+  markNotificationAsRead: (notificationId: string): Promise<boolean> => {
+    const notification = mockNotifications.find(n => n.id === notificationId);
+    if (!notification) return Promise.resolve(false);
+    
+    notification.read = true;
     return Promise.resolve(true);
   }
 };
