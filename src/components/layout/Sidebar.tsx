@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,8 @@ import {
   User,
   Building,
   Clock,
-  BookOpen
+  BookOpen,
+  Briefcase
 } from 'lucide-react';
 
 interface MenuItem {
@@ -27,6 +29,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Tableau de bord', icon: Home, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'employees', label: 'Gestion des agents', icon: Users, roles: ['admin', 'rh'] },
+  { id: 'functions', label: 'Gestion des fonctions', icon: Briefcase, roles: ['admin'] },
   { id: 'leave-requests', label: 'Demandes de congés', icon: Calendar, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'payroll', label: 'Bulletins de salaire', icon: FileText, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'] },
@@ -113,7 +116,7 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+              <p className="text-xs text-gray-500">{user?.fonction}</p>
             </div>
           </div>
         </div>

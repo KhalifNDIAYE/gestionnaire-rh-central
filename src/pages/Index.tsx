@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
 import Dashboard from '../components/dashboard/Dashboard';
 import EmployeesPage from './EmployeesPage';
+import FunctionsPage from './FunctionsPage';
 import LeaveRequestsPage from './LeaveRequestsPage';
 import PayrollPage from './PayrollPage';
 import MemorandumPage from './MemorandumPage';
@@ -26,6 +28,8 @@ const AppContent = () => {
         return <Dashboard />;
       case 'employees':
         return <EmployeesPage />;
+      case 'functions':
+        return <FunctionsPage />;
       case 'leave-requests':
         return <LeaveRequestsPage />;
       case 'payroll':

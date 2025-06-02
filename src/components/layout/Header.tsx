@@ -40,7 +40,7 @@ const Header = () => {
                 </Avatar>
                 <div className="hidden md:block text-left">
                   <div className="text-sm font-medium">{user?.name}</div>
-                  <div className="text-xs text-gray-500 capitalize">{user?.role}</div>
+                  <div className="text-xs text-gray-500">{user?.fonction}</div>
                 </div>
               </Button>
             </DropdownMenuTrigger>

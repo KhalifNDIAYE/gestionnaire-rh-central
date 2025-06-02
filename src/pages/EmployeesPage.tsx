@@ -16,7 +16,7 @@ interface Employee {
   id: string;
   name: string;
   email: string;
-  role: string;
+  fonction: string;
   department: string;
   status: 'active' | 'inactive';
   startDate: string;
@@ -24,10 +24,27 @@ interface Employee {
 }
 
 const mockEmployees: Employee[] = [
-  { id: '1', name: 'Jean Dupont', email: 'jean.dupont@company.com', role: 'agent', department: 'IT', status: 'active', startDate: '2023-01-15', salary: 45000 },
-  { id: '2', name: 'Marie Martin', email: 'marie.martin@company.com', role: 'agent', department: 'Finance', status: 'active', startDate: '2022-08-10', salary: 50000 },
-  { id: '3', name: 'Paul Bernard', email: 'paul.bernard@company.com', role: 'gestionnaire', department: 'HR', status: 'active', startDate: '2021-03-20', salary: 60000 },
-  { id: '4', name: 'Sophie Durand', email: 'sophie.durand@company.com', role: 'agent', department: 'Marketing', status: 'inactive', startDate: '2020-11-05', salary: 48000 },
+  { id: '1', name: 'Jean Dupont', email: 'jean.dupont@company.com', fonction: 'Développeur Full Stack', department: 'IT', status: 'active', startDate: '2023-01-15', salary: 45000 },
+  { id: '2', name: 'Marie Martin', email: 'marie.martin@company.com', fonction: 'Analyste Financier', department: 'Finance', status: 'active', startDate: '2022-08-10', salary: 50000 },
+  { id: '3', name: 'Paul Bernard', email: 'paul.bernard@company.com', fonction: 'Chef de Département RH', department: 'HR', status: 'active', startDate: '2021-03-20', salary: 60000 },
+  { id: '4', name: 'Sophie Durand', email: 'sophie.durand@company.com', fonction: 'Chargée de Communication', department: 'Marketing', status: 'inactive', startDate: '2020-11-05', salary: 48000 },
+];
+
+// Mock fonctions disponibles
+const mockFonctions = [
+  'Développeur Full Stack',
+  'Développeur Frontend',
+  'Développeur Backend',
+  'Chef de Projet',
+  'Analyste Financier',
+  'Comptable',
+  'Responsable RH',
+  'Chef de Département RH',
+  'Chargé de Recrutement',
+  'Chargée de Communication',
+  'Responsable Marketing',
+  'Commercial',
+  'Administrateur Système'
 ];
 
 const EmployeesPage = () => {
@@ -40,7 +57,8 @@ const EmployeesPage = () => {
   const filteredEmployees = employees.filter(employee =>
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.department.toLowerCase().includes(searchTerm.toLowerCase())
+    employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.fonction.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const onSubmit = (data: any) => {
@@ -117,21 +135,22 @@ const EmployeesPage = () => {
                 />
                 <FormField
                   control={form.control}
-                  name="role"
+                  name="fonction"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rôle</FormLabel>
+                      <FormLabel>Fonction</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner un rôle" />
+                            <SelectValue placeholder="Sélectionner une fonction" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="agent">Agent</SelectItem>
-                          <SelectItem value="gestionnaire">Gestionnaire</SelectItem>
-                          <SelectItem value="rh">RH</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                          {mockFonctions.map((fonction) => (
+                            <SelectItem key={fonction} value={fonction}>
+                              {fonction}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -178,7 +197,7 @@ const EmployeesPage = () => {
               <TableRow>
                 <TableHead>Nom</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Rôle</TableHead>
+                <TableHead>Fonction</TableHead>
                 <TableHead>Département</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Actions</TableHead>
@@ -190,8 +209,8 @@ const EmployeesPage = () => {
                   <TableCell className="font-medium">{employee.name}</TableCell>
                   <TableCell>{employee.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {employee.role}
+                    <Badge variant="outline">
+                      {employee.fonction}
                     </Badge>
                   </TableCell>
                   <TableCell>{employee.department}</TableCell>

@@ -7,7 +7,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: UserRole; // Gardé pour la compatibilité interne
+  fonction: string; // Nouveau champ pour l'affichage
   employeeId?: string;
   department?: string;
 }
@@ -22,10 +23,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock users for demo
 const mockUsers: User[] = [
-  { id: '1', name: 'Admin System', email: 'admin@rh.com', role: 'admin' },
-  { id: '2', name: 'Marie Dupont', email: 'marie.dupont@rh.com', role: 'rh', department: 'RH' },
-  { id: '3', name: 'Jean Martin', email: 'jean.martin@finance.com', role: 'gestionnaire', department: 'Finance' },
-  { id: '4', name: 'Sophie Bernard', email: 'sophie.bernard@dev.com', role: 'agent', employeeId: 'EMP001', department: 'IT' },
+  { id: '1', name: 'Admin System', email: 'admin@rh.com', role: 'admin', fonction: 'Administrateur Système' },
+  { id: '2', name: 'Marie Dupont', email: 'marie.dupont@rh.com', role: 'rh', fonction: 'Responsable RH', department: 'RH' },
+  { id: '3', name: 'Jean Martin', email: 'jean.martin@finance.com', role: 'gestionnaire', fonction: 'Chef de Département', department: 'Finance' },
+  { id: '4', name: 'Sophie Bernard', email: 'sophie.bernard@dev.com', role: 'agent', fonction: 'Développeur Senior', employeeId: 'EMP001', department: 'IT' },
 ];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
