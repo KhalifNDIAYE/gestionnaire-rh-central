@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX, Briefcase } from 'lucide-react';
+import EmployeeEditModal from '../components/employees/EmployeeEditModal';
 
 interface Employee {
   id: string;
@@ -23,9 +24,9 @@ interface Employee {
   startDate: string;
   salary: number;
   type: 'employee' | 'consultant';
-  endDate?: string; // Pour les consultants
-  hourlyRate?: number; // Pour les consultants
-  company?: string; // Société de conseil pour les consultants
+  endDate?: string;
+  hourlyRate?: number;
+  company?: string;
 }
 
 const mockEmployees: Employee[] = [
@@ -37,7 +38,6 @@ const mockEmployees: Employee[] = [
   { id: 'consultant-2', name: 'Julie Expert', email: 'julie@webagency.com', fonction: 'Consultant Web', department: 'Marketing', status: 'active', startDate: '2024-03-01', salary: 0, type: 'consultant', endDate: '2024-05-31', hourlyRate: 95, company: 'WebDesign Pro' },
 ];
 
-// Mock fonctions disponibles
 const mockFonctions = [
   'Développeur Full Stack',
   'Développeur Frontend',
@@ -64,6 +64,8 @@ const EmployeesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('employees');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const form = useForm();
 
   const filteredEmployees = employees.filter(employee => {
@@ -83,6 +85,16 @@ const EmployeesPage = () => {
     console.log('Nouvel employé/consultant:', data);
     setIsDialogOpen(false);
     form.reset();
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEmployeeUpdated = () => {
+    console.log('Employé mis à jour');
+    // Ici on rechargerait les données
   };
 
   const canManageEmployees = user?.role === 'admin' || user?.role === 'rh';
@@ -299,12 +311,18 @@ const EmployeesPage = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditEmployee(person)}
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {canManageEmployees && (
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -315,6 +333,14 @@ const EmployeesPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EmployeeEditModal
+        employee={selectedEmployee}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onEmployeeUpdated={handleEmployeeUpdated}
+        mockFonctions={mockFonctions}
+      />
     </div>
   );
 };

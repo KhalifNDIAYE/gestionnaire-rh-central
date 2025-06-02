@@ -43,14 +43,14 @@ const ProjectList = ({
   };
 
   const calculateProjectProgress = (project: Project) => {
-    if (project.tasks.length === 0) return 0;
+    if (!project.tasks || project.tasks.length === 0) return 0;
     const totalProgress = project.tasks.reduce((sum, task) => sum + task.progress, 0);
     return Math.round(totalProgress / project.tasks.length);
   };
 
   const getOverdueDeliverables = (project: Project) => {
     const today = new Date().toISOString().split('T')[0];
-    return project.deliverables.filter(d => 
+    return (project.deliverables || []).filter(d => 
       d.dueDate < today && d.status !== 'completed'
     ).length;
   };
@@ -115,7 +115,7 @@ const ProjectList = ({
                 <TableCell>
                   <div className="space-y-1">
                     <div className="text-sm">
-                      {project.deliverables.length} total
+                      {(project.deliverables || []).length} total
                     </div>
                     {getOverdueDeliverables(project) > 0 && (
                       <Badge variant="destructive" className="text-xs">

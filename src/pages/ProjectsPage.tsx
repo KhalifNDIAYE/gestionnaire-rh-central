@@ -61,7 +61,8 @@ const ProjectsPage = () => {
     setShowCreateModal(true);
   };
 
-  const canManageProjects = user?.fonction === 'admin' || user?.fonction === 'gestionnaire';
+  // Correction: utiliser user.role au lieu de user.fonction
+  const canManageProjects = user?.role === 'admin' || user?.role === 'gestionnaire';
 
   if (!canManageProjects) {
     return (
@@ -128,7 +129,7 @@ const ProjectsPage = () => {
                 </CardHeader>
               </Card>
               <GanttChart
-                tasks={selectedProject.tasks}
+                tasks={selectedProject.tasks || []}
                 startDate={selectedProject.startDate}
                 endDate={selectedProject.endDate}
               />
@@ -195,7 +196,7 @@ const ProjectsPage = () => {
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
                   {projects.reduce((count, project) => 
-                    count + project.deliverables.filter(d => 
+                    count + (project.deliverables || []).filter(d => 
                       d.status === 'overdue' || 
                       (d.dueDate < new Date().toISOString().split('T')[0] && d.status !== 'completed')
                     ).length, 0
@@ -218,7 +219,7 @@ const ProjectsPage = () => {
                     const futureDateStr = futureDate.toISOString().split('T')[0];
                     
                     return projects.reduce((count, project) => 
-                      count + project.deliverables.filter(d => 
+                      count + (project.deliverables || []).filter(d => 
                         d.dueDate >= todayStr && 
                         d.dueDate <= futureDateStr && 
                         d.status !== 'completed'
