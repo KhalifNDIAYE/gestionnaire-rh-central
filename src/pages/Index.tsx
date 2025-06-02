@@ -8,6 +8,7 @@ import ProjectsPage from './ProjectsPage';
 import LeaveRequestsPage from './LeaveRequestsPage';
 import PayrollPage from './PayrollPage';
 import MemorandumPage from './MemorandumPage';
+import OrganigrammePage from './OrganigrammePage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 
@@ -38,6 +39,8 @@ const AppContent = () => {
         return <PayrollPage />;
       case 'memorandum':
         return <MemorandumPage />;
+      case 'organigramme':
+        return <OrganigrammePage />;
       case 'salary':
         return (
           <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
@@ -49,13 +52,6 @@ const AppContent = () => {
           <div className="p-6">
             <h1 className="text-3xl font-bold mb-4">Mon Profil</h1>
             <p>Page de profil en cours de développement...</p>
-          </div>
-        );
-      case 'departments':
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">Gestion des Départements</h1>
-            <p>Page de gestion des départements en cours de développement...</p>
           </div>
         );
       case 'time-tracking':

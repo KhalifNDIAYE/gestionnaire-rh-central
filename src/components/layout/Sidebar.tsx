@@ -17,7 +17,8 @@ import {
   Clock,
   BookOpen,
   Briefcase,
-  FolderKanban
+  FolderKanban,
+  Sitemap
 } from 'lucide-react';
 
 interface MenuItem {
@@ -37,7 +38,7 @@ const menuItems: MenuItem[] = [
   { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'] },
   { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'profile', label: 'Mon profil', icon: User, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
-  { id: 'departments', label: 'Départements', icon: Building, roles: ['admin', 'rh'] },
+  { id: 'organigramme', label: 'Organigramme', icon: Sitemap, roles: ['admin', 'rh'] },
   { id: 'time-tracking', label: 'Pointage', icon: Clock, roles: ['admin', 'rh', 'agent'] },
   { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['admin'] },
 ];
