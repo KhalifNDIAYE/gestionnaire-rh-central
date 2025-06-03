@@ -64,7 +64,14 @@ const ProfilePage = () => {
   const handleProfileSubmit = async (data: z.infer<typeof profileFormSchema>) => {
     try {
       setIsLoading(true);
-      const updatedUser = await userService.updateProfile(user.id, data);
+      // S'assurer que toutes les propriétés requises sont présentes
+      const profileData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+      };
+      const updatedUser = await userService.updateProfile(user.id, profileData);
       updateUserInfo(updatedUser);
       setIsEditing(false);
       toast({

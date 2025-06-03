@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,25 +11,37 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
-import { settingsService, SystemSettings, NotificationSettings, AppearanceSettings } from '../services/settingsService';
+import { settingsService, SystemSettings } from '../services/settingsService';
 
 const SettingsPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
 
-  // Fetch settings on component mount
-  useState(() => {
+  // Charger les paramètres au montage du composant
+  useEffect(() => {
     const loadSettings = async () => {
       try {
         const data = await settingsService.getSettings();
         setSettings(data);
+        
+        // Mettre à jour les valeurs par défaut des formulaires
+        generalForm.reset({
+          appName: data.general.appName,
+          companyName: data.general.companyName,
+          companyAddress: data.general.companyAddress || '',
+          companyPhone: data.general.companyPhone || '',
+          companyEmail: data.general.companyEmail || '',
+        });
+        
+        notificationForm.reset(data.notifications);
+        appearanceForm.reset(data.appearance);
       } catch (error) {
         console.error('Error loading settings:', error);
       }
     };
     loadSettings();
-  });
+  }, []);
 
   // Schéma pour les paramètres généraux
   const generalFormSchema = z.object({
@@ -38,7 +49,7 @@ const SettingsPage = () => {
     companyName: z.string().min(1, { message: 'Le nom de l\'entreprise est requis' }),
     companyAddress: z.string().optional(),
     companyPhone: z.string().optional(),
-    companyEmail: z.string().email({ message: 'Email invalide' }).optional(),
+    companyEmail: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
   });
 
   // Schéma pour les paramètres de notification
@@ -62,32 +73,32 @@ const SettingsPage = () => {
   const generalForm = useForm<z.infer<typeof generalFormSchema>>({
     resolver: zodResolver(generalFormSchema),
     defaultValues: {
-      appName: settings?.general.appName || 'RH System',
-      companyName: settings?.general.companyName || 'Votre Entreprise',
-      companyAddress: settings?.general.companyAddress || '',
-      companyPhone: settings?.general.companyPhone || '',
-      companyEmail: settings?.general.companyEmail || '',
+      appName: 'RH System',
+      companyName: 'Votre Entreprise',
+      companyAddress: '',
+      companyPhone: '',
+      companyEmail: '',
     },
   });
 
   const notificationForm = useForm<z.infer<typeof notificationFormSchema>>({
     resolver: zodResolver(notificationFormSchema),
     defaultValues: {
-      emailNotifications: settings?.notifications.emailNotifications || true,
-      appNotifications: settings?.notifications.appNotifications || true,
-      leaveRequestNotify: settings?.notifications.leaveRequestNotify || true,
-      payrollNotify: settings?.notifications.payrollNotify || true,
-      newEmployeeNotify: settings?.notifications.newEmployeeNotify || false,
+      emailNotifications: true,
+      appNotifications: true,
+      leaveRequestNotify: true,
+      payrollNotify: true,
+      newEmployeeNotify: false,
     },
   });
 
   const appearanceForm = useForm<z.infer<typeof appearanceFormSchema>>({
     resolver: zodResolver(appearanceFormSchema),
     defaultValues: {
-      theme: settings?.appearance.theme || 'light',
-      fontSize: settings?.appearance.fontSize || 'medium',
-      language: settings?.appearance.language || 'fr',
-      sidebarCollapsed: settings?.appearance.sidebarCollapsed || false,
+      theme: 'light',
+      fontSize: 'medium',
+      language: 'fr',
+      sidebarCollapsed: false,
     },
   });
 
@@ -95,7 +106,15 @@ const SettingsPage = () => {
   const handleGeneralSubmit = async (data: z.infer<typeof generalFormSchema>) => {
     try {
       setLoading(true);
-      await settingsService.updateGeneralSettings(data);
+      // S'assurer que toutes les propriétés requises sont présentes
+      const generalData = {
+        appName: data.appName,
+        companyName: data.companyName,
+        companyAddress: data.companyAddress,
+        companyPhone: data.companyPhone,
+        companyEmail: data.companyEmail,
+      };
+      await settingsService.updateGeneralSettings(generalData);
       toast({
         title: "Paramètres mis à jour",
         description: "Les paramètres généraux ont été mis à jour avec succès.",
@@ -115,7 +134,15 @@ const SettingsPage = () => {
   const handleNotificationSubmit = async (data: z.infer<typeof notificationFormSchema>) => {
     try {
       setLoading(true);
-      await settingsService.updateNotificationSettings(data);
+      // S'assurer que toutes les propriétés requises sont présentes
+      const notificationData = {
+        emailNotifications: data.emailNotifications,
+        appNotifications: data.appNotifications,
+        leaveRequestNotify: data.leaveRequestNotify,
+        payrollNotify: data.payrollNotify,
+        newEmployeeNotify: data.newEmployeeNotify,
+      };
+      await settingsService.updateNotificationSettings(notificationData);
       toast({
         title: "Paramètres mis à jour",
         description: "Les paramètres de notification ont été mis à jour avec succès.",
@@ -135,7 +162,14 @@ const SettingsPage = () => {
   const handleAppearanceSubmit = async (data: z.infer<typeof appearanceFormSchema>) => {
     try {
       setLoading(true);
-      await settingsService.updateAppearanceSettings(data);
+      // S'assurer que toutes les propriétés requises sont présentes
+      const appearanceData = {
+        theme: data.theme,
+        fontSize: data.fontSize,
+        language: data.language,
+        sidebarCollapsed: data.sidebarCollapsed,
+      };
+      await settingsService.updateAppearanceSettings(appearanceData);
       toast({
         title: "Paramètres mis à jour",
         description: "Les paramètres d'apparence ont été mis à jour avec succès.",
