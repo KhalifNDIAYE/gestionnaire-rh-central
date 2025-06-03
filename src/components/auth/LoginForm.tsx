@@ -102,10 +102,10 @@ const LoginForm = () => {
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600 mb-2">Comptes de démonstration :</p>
               <div className="text-xs space-y-1">
-                <p><strong>Admin:</strong> admin@rh.com</p>
-                <p><strong>RH:</strong> marie.dupont@rh.com</p>
-                <p><strong>Gestionnaire:</strong> jean.martin@finance.com</p>
-                <p><strong>Agent:</strong> sophie.bernard@dev.com</p>
+                <p><strong>Admin:</strong> admin@company.com</p>
+                <p><strong>RH:</strong> marie.dubois@company.com</p>
+                <p><strong>Gestionnaire:</strong> pierre.martin@company.com</p>
+                <p><strong>Agent:</strong> sophie.leroy@company.com</p>
                 <p className="text-blue-600 font-medium">Mot de passe: password</p>
               </div>
             </div>
