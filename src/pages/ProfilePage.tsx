@@ -1,375 +1,245 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { User, Mail, Phone, MapPin, Building, Calendar, DollarSign, Briefcase } from 'lucide-react';
+import { userService, UserProfile } from '../services/userService';
+import { organigrammeService, OrganizationalUnit } from '../services/organigrammeService';
 import { toast } from '@/hooks/use-toast';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { userService, PasswordChangeRequest } from '../services/userService';
 
 const ProfilePage = () => {
-  const { user, updateUserInfo } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const { user, updateProfile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [units, setUnits] = useState<OrganizationalUnit[]>([]);
+  const [profile, setProfile] = useState<UserProfile>({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    unitId: '',
+    unitName: ''
+  });
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+      loadUnits();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const userProfile = await userService.getUserProfile(user.id);
+      if (userProfile) {
+        setProfile(userProfile);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement du profil:', error);
+    }
+  };
+
+  const loadUnits = async () => {
+    try {
+      const unitsData = await organigrammeService.getUnits();
+      setUnits(unitsData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des unités:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      // Trouver l'unité sélectionnée pour obtenir son nom
+      const selectedUnit = units.find(u => u.id === profile.unitId);
+      const profileToUpdate = {
+        ...profile,
+        unitName: selectedUnit?.name || ''
+      };
+
+      await userService.updateUserProfile(user.id, profileToUpdate);
+      await updateProfile(profileToUpdate);
+      
+      toast({
+        title: "Succès",
+        description: "Profil mis à jour avec succès",
+      });
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour le profil",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!user) {
-    return <div>Vous devez être connecté pour accéder à cette page.</div>;
+    return <div>Chargement...</div>;
   }
-
-  // Formulaire pour les informations personnelles
-  const profileFormSchema = z.object({
-    name: z.string().min(1, { message: 'Le nom est requis' }),
-    email: z.string().email({ message: 'Email invalide' }),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-  });
-
-  const profileForm = useForm<z.infer<typeof profileFormSchema>>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '',
-      address: user.address || '',
-    },
-  });
-
-  // Formulaire pour le changement de mot de passe
-  const passwordFormSchema = z.object({
-    currentPassword: z.string().min(1, { message: 'Le mot de passe actuel est requis' }),
-    newPassword: z.string().min(8, { message: 'Le nouveau mot de passe doit contenir au moins 8 caractères' }),
-    confirmPassword: z.string().min(1, { message: 'La confirmation est requise' }),
-  }).refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Les mots de passe ne correspondent pas",
-    path: ["confirmPassword"],
-  });
-
-  const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({
-    resolver: zodResolver(passwordFormSchema),
-    defaultValues: {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    },
-  });
-
-  const handleProfileSubmit = async (data: z.infer<typeof profileFormSchema>) => {
-    try {
-      setIsLoading(true);
-      // S'assurer que toutes les propriétés requises sont présentes
-      const profileData = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-      };
-      const updatedUser = await userService.updateProfile(user.id, profileData);
-      updateUserInfo(updatedUser);
-      setIsEditing(false);
-      toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été mises à jour avec succès.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la mise à jour du profil.",
-        variant: "destructive",
-      });
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePasswordSubmit = async (data: z.infer<typeof passwordFormSchema>) => {
-    try {
-      setIsLoading(true);
-      const passwordData: PasswordChangeRequest = {
-        userId: user.id,
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      };
-      
-      await userService.changePassword(passwordData);
-      passwordForm.reset();
-      
-      toast({
-        title: "Mot de passe changé",
-        description: "Votre mot de passe a été modifié avec succès.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors du changement de mot de passe.",
-        variant: "destructive",
-      });
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Mon Profil</h1>
-        <p className="text-gray-500">Gérez vos informations personnelles et vos préférences</p>
+        <p className="text-gray-600">Gérez vos informations personnelles</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Carte de profil */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center space-y-4">
-              <Avatar className="h-24 w-24">
-                <AvatarFallback className="text-xl">
-                  {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center">
-                <h2 className="text-xl font-semibold">{user.name}</h2>
-                <p className="text-gray-500">{user.fonction}</p>
-              </div>
-              <div className="w-full px-4">
-                <Separator className="my-4" />
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Email:</span>
-                    <span className="text-sm">{user.email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Rôle:</span>
-                    <span className="text-sm capitalize">{user.role}</span>
-                  </div>
-                  {user.department && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Département:</span>
-                      <span className="text-sm">{user.department}</span>
-                    </div>
-                  )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Informations de base */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Informations personnelles</CardTitle>
+            <CardDescription>
+              Mettez à jour vos informations de profil
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Nom complet</Label>
+                  <Input
+                    id="name"
+                    value={profile.name}
+                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profile.email}
+                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    required
+                  />
                 </div>
               </div>
-            </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input
+                    id="phone"
+                    value={profile.phone}
+                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="unitId">Unité organisationnelle</Label>
+                  <Select 
+                    value={profile.unitId} 
+                    onValueChange={(value) => setProfile({ ...profile, unitId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une unité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {units.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.id}>
+                          {unit.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="address">Adresse</Label>
+                <Input
+                  id="address"
+                  value={profile.address}
+                  onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                />
+              </div>
+
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Mise à jour...' : 'Mettre à jour'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
 
-        {/* Formulaires */}
-        <div className="col-span-1 md:col-span-2">
-          <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="personal">Informations personnelles</TabsTrigger>
-              <TabsTrigger value="security">Sécurité</TabsTrigger>
-              <TabsTrigger value="preferences">Préférences</TabsTrigger>
-            </TabsList>
+        {/* Informations du compte */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations du compte</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <User className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm font-medium">Rôle</p>
+                  <Badge variant="outline">{user.role}</Badge>
+                </div>
+              </div>
 
-            {/* Informations personnelles */}
-            <TabsContent value="personal">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Informations personnelles</CardTitle>
-                    {!isEditing ? (
-                      <Button onClick={() => setIsEditing(true)}>Modifier</Button>
-                    ) : (
-                      <Button variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
-                    )}
-                  </div>
-                  <CardDescription>
-                    Mettez à jour vos informations personnelles
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {!isEditing ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-medium text-sm">Nom complet</h3>
-                        <p>{user.name}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-sm">Email</h3>
-                        <p>{user.email}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-sm">Téléphone</h3>
-                        <p>{user.phone || "Non renseigné"}</p>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-sm">Adresse</h3>
-                        <p>{user.address || "Non renseignée"}</p>
-                      </div>
+              <Separator />
+
+              <div className="flex items-center space-x-3">
+                <Briefcase className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm font-medium">Fonction</p>
+                  <p className="text-sm text-gray-600">{user.fonction}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center space-x-3">
+                <Building className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm font-medium">Unité</p>
+                  <p className="text-sm text-gray-600">{user.unitName || 'Non assigné'}</p>
+                </div>
+              </div>
+
+              {user.hireDate && (
+                <>
+                  <Separator />
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium">Date d'embauche</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(user.hireDate).toLocaleDateString('fr-FR')}
+                      </p>
                     </div>
-                  ) : (
-                    <Form {...profileForm}>
-                      <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
-                        <FormField
-                          control={profileForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Nom complet</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={profileForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="email" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                  </div>
+                </>
+              )}
 
-                        <FormField
-                          control={profileForm.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Téléphone</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={profileForm.control}
-                          name="address"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Adresse</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div className="flex justify-end space-x-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => setIsEditing(false)}
-                          >
-                            Annuler
-                          </Button>
-                          <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Enregistrement..." : "Enregistrer"}
-                          </Button>
-                        </div>
-                      </form>
-                    </Form>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Sécurité */}
-            <TabsContent value="security">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sécurité</CardTitle>
-                  <CardDescription>
-                    Mettez à jour votre mot de passe
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...passwordForm}>
-                    <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
-                      <FormField
-                        control={passwordForm.control}
-                        name="currentPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Mot de passe actuel</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="password" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={passwordForm.control}
-                        name="newPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nouveau mot de passe</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="password" />
-                            </FormControl>
-                            <FormDescription>
-                              Au moins 8 caractères
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={passwordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirmer le mot de passe</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="password" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="flex justify-end">
-                        <Button type="submit" disabled={isLoading}>
-                          {isLoading ? "Changement..." : "Changer le mot de passe"}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Préférences */}
-            <TabsContent value="preferences">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Préférences</CardTitle>
-                  <CardDescription>
-                    Personnalisez vos préférences de l'application
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-500 text-center py-4">
-                    Module en cours de développement
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+              {user.salary && (
+                <>
+                  <Separator />
+                  <div className="flex items-center space-x-3">
+                    <DollarSign className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium">Salaire</p>
+                      <p className="text-sm text-gray-600">{user.salary.toLocaleString()} €</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
