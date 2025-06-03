@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
@@ -9,11 +10,14 @@ import LeaveRequestsPage from './LeaveRequestsPage';
 import PayrollPage from './PayrollPage';
 import MemorandumPage from './MemorandumPage';
 import OrganigrammePage from './OrganigrammePage';
+import ProfilePage from './ProfilePage';
+import SettingsPage from './SettingsPage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 
 // Lazy load pour le module de calcul des salaires
 const SalaryCalculationPage = React.lazy(() => import('./SalaryCalculationPage'));
+const TimeTrackingPage = React.lazy(() => import('./TimeTrackingPage'));
 
 const AppContent = () => {
   const { user } = useAuth();
@@ -48,26 +52,15 @@ const AppContent = () => {
           </React.Suspense>
         );
       case 'profile':
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">Mon Profil</h1>
-            <p>Page de profil en cours de développement...</p>
-          </div>
-        );
+        return <ProfilePage />;
       case 'time-tracking':
         return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">Système de Pointage</h1>
-            <p>Module de pointage en cours de développement...</p>
-          </div>
+          <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
+            <TimeTrackingPage />
+          </React.Suspense>
         );
       case 'settings':
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">Paramètres</h1>
-            <p>Page de paramètres en cours de développement...</p>
-          </div>
-        );
+        return <SettingsPage />;
       default:
         return <Dashboard />;
     }
