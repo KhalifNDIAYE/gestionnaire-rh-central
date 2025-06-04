@@ -1,4 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiService } from '../services/apiService';
+import { API_ENDPOINTS } from '../config/api';
 
 export interface User {
   id: string;
@@ -6,12 +9,13 @@ export interface User {
   email: string;
   role: 'admin' | 'rh' | 'gestionnaire' | 'agent';
   fonction: string;
-  unitId?: string; // ID de l'unité organisationnelle
-  unitName?: string; // Nom de l'unité organisationnelle
+  unitId?: string;
+  unitName?: string;
   phone?: string;
   address?: string;
   hireDate?: string;
   salary?: number;
+  token?: string; // Token JWT pour l'authentification
 }
 
 interface AuthContextType {
@@ -23,7 +27,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo
+// Mock users pour fallback
 const mockUsers: User[] = [
   {
     id: '1',
@@ -90,28 +94,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const foundUser = mockUsers.find(u => u.email === email);
-    if (foundUser && password === 'password') {
-      setUser(foundUser);
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
+    try {
+      // Tentative de connexion via l'API
+      const response = await apiService.post<{ user: User; token: string }>(
+        API_ENDPOINTS.login, 
+        { email, password }
+      );
+      
+      const userWithToken = { ...response.user, token: response.token };
+      setUser(userWithToken);
+      localStorage.setItem('currentUser', JSON.stringify(userWithToken));
       return true;
+    } catch (error) {
+      console.error('API login failed, using fallback:', error);
+      
+      // Fallback vers l'authentification mock
+      const foundUser = mockUsers.find(u => u.email === email);
+      if (foundUser && password === 'password') {
+        setUser(foundUser);
+        localStorage.setItem('currentUser', JSON.stringify(foundUser));
+        return true;
+      }
+      return false;
     }
-    return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('currentUser');
+  const logout = async () => {
+    try {
+      if (user?.token) {
+        await apiService.post(API_ENDPOINTS.logout);
+      }
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('currentUser');
+    }
   };
 
   const updateProfile = async (updates: Partial<User>): Promise<void> => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      
-      // Simuler une mise à jour côté serveur
-      await new Promise(resolve => setTimeout(resolve, 500));
+      try {
+        const updatedUser = await apiService.put<User>(
+          API_ENDPOINTS.userProfile(user.id), 
+          updates
+        );
+        
+        const userWithToken = { ...updatedUser, token: user.token };
+        setUser(userWithToken);
+        localStorage.setItem('currentUser', JSON.stringify(userWithToken));
+      } catch (error) {
+        console.error('Profile update via API failed:', error);
+        
+        // Fallback vers mise à jour locale
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      }
     }
   };
 

@@ -1,5 +1,6 @@
-
 import { User } from '../contexts/AuthContext';
+import { apiService } from './apiService';
+import { API_ENDPOINTS } from '../config/api';
 import { organigrammeService, OrganizationalUnit } from './organigrammeService';
 
 export interface UserProfile {
@@ -16,9 +17,8 @@ export interface UserWithUnit extends User {
 }
 
 class UserService {
-  private storageKey = 'users_data';
-
-  private getInitialUsers(): User[] {
+  // Fallback vers les données locales si l'API n'est pas disponible
+  private getFallbackUsers(): User[] {
     return [
       {
         id: '1',
@@ -88,94 +88,92 @@ class UserService {
     ];
   }
 
-  private getUsersFromStorage(): User[] {
-    try {
-      const stored = localStorage.getItem(this.storageKey);
-      return stored ? JSON.parse(stored) : this.getInitialUsers();
-    } catch {
-      return this.getInitialUsers();
-    }
-  }
-
-  private saveUsersToStorage(users: User[]): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(users));
-  }
-
   async getUserProfile(userId: string): Promise<UserProfile | null> {
-    await this.simulateDelay();
-    const users = this.getUsersFromStorage();
-    const user = users.find(u => u.id === userId);
-    
-    if (!user) return null;
+    try {
+      const user = await apiService.get<User>(API_ENDPOINTS.userProfile(userId));
+      
+      return {
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        address: user.address || '',
+        unitId: user.unitId,
+        unitName: user.unitName
+      };
+    } catch (error) {
+      console.error('Error fetching user profile from API, using fallback:', error);
+      
+      // Fallback vers les données locales
+      const users = this.getFallbackUsers();
+      const user = users.find(u => u.id === userId);
+      
+      if (!user) return null;
 
-    return {
-      name: user.name,
-      email: user.email,
-      phone: user.phone || '',
-      address: user.address || '',
-      unitId: user.unitId,
-      unitName: user.unitName
-    };
+      return {
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        address: user.address || '',
+        unitId: user.unitId,
+        unitName: user.unitName
+      };
+    }
   }
 
   async updateUserProfile(userId: string, profile: UserProfile): Promise<void> {
-    await this.simulateDelay();
-    const users = this.getUsersFromStorage();
-    const index = users.findIndex(u => u.id === userId);
-    
-    if (index === -1) {
-      throw new Error('Utilisateur non trouvé');
+    try {
+      await apiService.put(API_ENDPOINTS.userProfile(userId), profile);
+    } catch (error) {
+      console.error('Error updating user profile via API:', error);
+      // En cas d'erreur API, on simule juste un délai
+      await new Promise(resolve => setTimeout(resolve, 300));
+      throw new Error('Impossible de mettre à jour le profil utilisateur');
     }
-
-    users[index] = {
-      ...users[index],
-      ...profile
-    };
-
-    this.saveUsersToStorage(users);
   }
 
   async getUsersWithUnits(): Promise<UserWithUnit[]> {
-    await this.simulateDelay();
-    const users = this.getUsersFromStorage();
-    const units = await organigrammeService.getUnits();
-    
-    return users.map(user => ({
-      ...user,
-      unit: user.unitId ? units.find(u => u.id === user.unitId) : undefined
-    }));
+    try {
+      const users = await apiService.get<User[]>(API_ENDPOINTS.users);
+      const units = await organigrammeService.getUnits();
+      
+      return users.map(user => ({
+        ...user,
+        unit: user.unitId ? units.find(u => u.id === user.unitId) : undefined
+      }));
+    } catch (error) {
+      console.error('Error fetching users from API, using fallback:', error);
+      
+      // Fallback vers les données locales
+      const users = this.getFallbackUsers();
+      const units = await organigrammeService.getUnits();
+      
+      return users.map(user => ({
+        ...user,
+        unit: user.unitId ? units.find(u => u.id === user.unitId) : undefined
+      }));
+    }
   }
 
   async getUsersByUnit(unitId: string): Promise<User[]> {
-    await this.simulateDelay();
-    const users = this.getUsersFromStorage();
-    return users.filter(user => user.unitId === unitId);
+    try {
+      const users = await apiService.get<User[]>(`${API_ENDPOINTS.users}?unitId=${unitId}`);
+      return users;
+    } catch (error) {
+      console.error('Error fetching users by unit from API:', error);
+      
+      // Fallback
+      const users = this.getFallbackUsers();
+      return users.filter(user => user.unitId === unitId);
+    }
   }
 
   async assignUserToUnit(userId: string, unitId: string): Promise<void> {
-    await this.simulateDelay();
-    const users = this.getUsersFromStorage();
-    const units = await organigrammeService.getUnits();
-    
-    const userIndex = users.findIndex(u => u.id === userId);
-    const unit = units.find(u => u.id === unitId);
-    
-    if (userIndex === -1) {
-      throw new Error('Utilisateur non trouvé');
+    try {
+      await apiService.patch(API_ENDPOINTS.userProfile(userId), { unitId });
+    } catch (error) {
+      console.error('Error assigning user to unit via API:', error);
+      throw new Error('Impossible d\'assigner l\'utilisateur à l\'unité');
     }
-    
-    if (!unit) {
-      throw new Error('Unité organisationnelle non trouvée');
-    }
-
-    users[userIndex].unitId = unitId;
-    users[userIndex].unitName = unit.name;
-    
-    this.saveUsersToStorage(users);
-  }
-
-  private simulateDelay(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, 300));
   }
 }
 
