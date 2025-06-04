@@ -1,27 +1,12 @@
-
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import NotificationCenter from '../notifications/NotificationCenter';
+import AnnouncementCarousel from '../communication/AnnouncementCarousel';
 import { Users, Calendar, FileText, DollarSign, TrendingUp, Clock } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
-
-  const getWelcomeMessage = () => {
-    switch (user?.role) {
-      case 'admin':
-        return 'Bienvenue dans l\'administration du système RH';
-      case 'rh':
-        return 'Bienvenue dans l\'espace Ressources Humaines';
-      case 'gestionnaire':
-        return 'Bienvenue dans l\'espace de gestion financière';
-      case 'agent':
-        return 'Bienvenue dans votre espace personnel';
-      default:
-        return 'Bienvenue';
-    }
-  };
 
   const getStats = () => {
     switch (user?.role) {
@@ -56,18 +41,8 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Message de bienvenue */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          {getWelcomeMessage()}
-        </h2>
-        <p className="text-gray-600">
-          Voici un aperçu de vos informations importantes.
-        </p>
-        <Badge variant="outline" className="mt-2 capitalize">
-          {user?.role}
-        </Badge>
-      </div>
+      {/* Carrousel d'annonces dynamiques */}
+      <AnnouncementCarousel />
 
       {/* Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
