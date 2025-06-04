@@ -1,4 +1,6 @@
 
+import { apiService } from './apiService';
+
 export interface GeneralSettings {
   appName: string;
   companyName: string;
@@ -32,7 +34,6 @@ export interface SystemSettings {
 class SettingsService {
   private storageKey = 'rh_system_settings';
 
-  // Paramètres par défaut
   private defaultSettings: SystemSettings = {
     general: {
       appName: 'RH System',
@@ -71,60 +72,76 @@ class SettingsService {
   }
 
   async getSettings(): Promise<SystemSettings> {
-    await this.simulateDelay();
-    return this.getSettingsFromStorage();
+    try {
+      const settings = await apiService.get<SystemSettings>('/settings');
+      return settings;
+    } catch (error) {
+      console.error('Error fetching settings from API, using local storage:', error);
+      return this.getSettingsFromStorage();
+    }
   }
 
   async updateGeneralSettings(data: GeneralSettings): Promise<SystemSettings> {
-    await this.simulateDelay();
-    
-    const currentSettings = this.getSettingsFromStorage();
-    const updatedSettings = {
-      ...currentSettings,
-      general: {
-        ...currentSettings.general,
-        ...data,
-      }
-    };
-    
-    this.saveSettingsToStorage(updatedSettings);
-    return updatedSettings;
+    try {
+      const updatedSettings = await apiService.put<SystemSettings>('/settings/general', data);
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating general settings via API, using local fallback:', error);
+      
+      const currentSettings = this.getSettingsFromStorage();
+      const updatedSettings = {
+        ...currentSettings,
+        general: {
+          ...currentSettings.general,
+          ...data,
+        }
+      };
+      
+      this.saveSettingsToStorage(updatedSettings);
+      return updatedSettings;
+    }
   }
 
   async updateNotificationSettings(data: NotificationSettings): Promise<SystemSettings> {
-    await this.simulateDelay();
-    
-    const currentSettings = this.getSettingsFromStorage();
-    const updatedSettings = {
-      ...currentSettings,
-      notifications: {
-        ...currentSettings.notifications,
-        ...data,
-      }
-    };
-    
-    this.saveSettingsToStorage(updatedSettings);
-    return updatedSettings;
+    try {
+      const updatedSettings = await apiService.put<SystemSettings>('/settings/notifications', data);
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating notification settings via API, using local fallback:', error);
+      
+      const currentSettings = this.getSettingsFromStorage();
+      const updatedSettings = {
+        ...currentSettings,
+        notifications: {
+          ...currentSettings.notifications,
+          ...data,
+        }
+      };
+      
+      this.saveSettingsToStorage(updatedSettings);
+      return updatedSettings;
+    }
   }
 
   async updateAppearanceSettings(data: AppearanceSettings): Promise<SystemSettings> {
-    await this.simulateDelay();
-    
-    const currentSettings = this.getSettingsFromStorage();
-    const updatedSettings = {
-      ...currentSettings,
-      appearance: {
-        ...currentSettings.appearance,
-        ...data,
-      }
-    };
-    
-    this.saveSettingsToStorage(updatedSettings);
-    return updatedSettings;
-  }
-
-  private simulateDelay(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, 300));
+    try {
+      const updatedSettings = await apiService.put<SystemSettings>('/settings/appearance', data);
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating appearance settings via API, using local fallback:', error);
+      
+      const currentSettings = this.getSettingsFromStorage();
+      const updatedSettings = {
+        ...currentSettings,
+        appearance: {
+          ...currentSettings.appearance,
+          ...data,
+        }
+      };
+      
+      this.saveSettingsToStorage(updatedSettings);
+      return updatedSettings;
+    }
   }
 }
 

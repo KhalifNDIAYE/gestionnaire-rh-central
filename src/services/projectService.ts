@@ -1,14 +1,17 @@
 
+import { apiService } from './apiService';
+import { API_ENDPOINTS } from '../config/api';
+
 export interface Task {
   id: string;
   name: string;
   description?: string;
   startDate: string;
   endDate: string;
-  duration: number; // en jours
-  progress: number; // pourcentage
-  dependencies: string[]; // IDs des tâches dépendantes
-  assignedTo: string[]; // IDs des employés/consultants assignés
+  duration: number;
+  progress: number;
+  dependencies: string[];
+  assignedTo: string[];
   priority: 'low' | 'medium' | 'high' | 'critical';
   status: 'not-started' | 'in-progress' | 'completed' | 'on-hold';
 }
@@ -21,7 +24,7 @@ export interface Deliverable {
   status: 'pending' | 'in-progress' | 'completed' | 'overdue';
   priority: 'low' | 'medium' | 'high' | 'critical';
   completedDate?: string;
-  assignedTo?: string[]; // IDs des responsables
+  assignedTo?: string[];
 }
 
 export interface Project {
@@ -33,9 +36,9 @@ export interface Project {
   status: 'planning' | 'active' | 'completed' | 'cancelled';
   budget: number;
   actualCost: number;
-  projectManager: string; // ID de l'employé
-  team: string[]; // IDs des membres de l'équipe
-  consultants: string[]; // IDs des consultants
+  projectManager: string;
+  team: string[];
+  consultants: string[];
   tasks: Task[];
   milestones: Milestone[];
   deliverables: Deliverable[];
@@ -59,7 +62,7 @@ export interface ProjectNotification {
   read: boolean;
 }
 
-// Mock data pour les projets
+// Mock data pour fallback
 const mockProjects: Project[] = [
   {
     id: '1',
@@ -131,195 +134,147 @@ const mockProjects: Project[] = [
         assignedTo: ['2', '4']
       }
     ]
-  },
-  {
-    id: '2',
-    name: 'Refonte site web',
-    description: 'Modernisation du site web corporate',
-    startDate: '2024-03-01',
-    endDate: '2024-05-31',
-    status: 'planning',
-    budget: 50000,
-    actualCost: 0,
-    projectManager: '4',
-    team: ['4'],
-    consultants: ['consultant-2'],
-    tasks: [],
-    milestones: [],
-    deliverables: [
-      {
-        id: 'deliverable-3',
-        name: 'Maquettes UI/UX',
-        description: 'Conception des interfaces utilisateur',
-        dueDate: '2024-03-15',
-        status: 'pending',
-        priority: 'medium',
-        assignedTo: ['consultant-2']
-      }
-    ]
   }
 ];
 
-const mockNotifications: ProjectNotification[] = [];
-
 export const projectService = {
-  getProjects: (): Promise<Project[]> => {
-    return Promise.resolve(mockProjects);
-  },
-
-  getProject: (id: string): Promise<Project | null> => {
-    const project = mockProjects.find(p => p.id === id);
-    return Promise.resolve(project || null);
-  },
-
-  createProject: (project: Omit<Project, 'id'>): Promise<Project> => {
-    const newProject = {
-      ...project,
-      id: `project-${Date.now()}`
-    };
-    mockProjects.push(newProject);
-    return Promise.resolve(newProject);
-  },
-
-  updateProject: (id: string, updates: Partial<Project>): Promise<Project | null> => {
-    const index = mockProjects.findIndex(p => p.id === id);
-    if (index === -1) return Promise.resolve(null);
-    
-    mockProjects[index] = { ...mockProjects[index], ...updates };
-    return Promise.resolve(mockProjects[index]);
-  },
-
-  deleteProject: (id: string): Promise<boolean> => {
-    const index = mockProjects.findIndex(p => p.id === id);
-    if (index === -1) return Promise.resolve(false);
-    
-    mockProjects.splice(index, 1);
-    return Promise.resolve(true);
-  },
-
-  addTask: (projectId: string, task: Omit<Task, 'id'>): Promise<Task | null> => {
-    const project = mockProjects.find(p => p.id === projectId);
-    if (!project) return Promise.resolve(null);
-
-    const newTask = {
-      ...task,
-      id: `task-${Date.now()}`
-    };
-    
-    project.tasks.push(newTask);
-    return Promise.resolve(newTask);
-  },
-
-  updateTaskProgress: (projectId: string, taskId: string, progress: number): Promise<boolean> => {
-    const project = mockProjects.find(p => p.id === projectId);
-    if (!project) return Promise.resolve(false);
-
-    const task = project.tasks.find(t => t.id === taskId);
-    if (!task) return Promise.resolve(false);
-
-    task.progress = progress;
-    if (progress === 100) task.status = 'completed';
-    else if (progress > 0) task.status = 'in-progress';
-
-    return Promise.resolve(true);
-  },
-
-  // Nouvelles méthodes pour les livrables
-  addDeliverable: (projectId: string, deliverable: Omit<Deliverable, 'id'>): Promise<Deliverable | null> => {
-    const project = mockProjects.find(p => p.id === projectId);
-    if (!project) return Promise.resolve(null);
-
-    const newDeliverable = {
-      ...deliverable,
-      id: `deliverable-${Date.now()}`
-    };
-    
-    project.deliverables.push(newDeliverable);
-    return Promise.resolve(newDeliverable);
-  },
-
-  updateDeliverable: (projectId: string, deliverableId: string, updates: Partial<Deliverable>): Promise<boolean> => {
-    const project = mockProjects.find(p => p.id === projectId);
-    if (!project) return Promise.resolve(false);
-
-    const deliverableIndex = project.deliverables.findIndex(d => d.id === deliverableId);
-    if (deliverableIndex === -1) return Promise.resolve(false);
-
-    project.deliverables[deliverableIndex] = { 
-      ...project.deliverables[deliverableIndex], 
-      ...updates 
-    };
-
-    // Si le livrable est marqué comme terminé, ajouter la date de completion
-    if (updates.status === 'completed' && !project.deliverables[deliverableIndex].completedDate) {
-      project.deliverables[deliverableIndex].completedDate = new Date().toISOString().split('T')[0];
+  getProjects: async (): Promise<Project[]> => {
+    try {
+      const projects = await apiService.get<Project[]>(API_ENDPOINTS.projects);
+      return projects;
+    } catch (error) {
+      console.error('Error fetching projects from API, using fallback:', error);
+      return mockProjects;
     }
-
-    return Promise.resolve(true);
   },
 
-  getOverdueDeliverables: (): Promise<{ project: Project; deliverable: Deliverable }[]> => {
-    const today = new Date().toISOString().split('T')[0];
-    const overdueDeliverables: { project: Project; deliverable: Deliverable }[] = [];
-
-    mockProjects.forEach(project => {
-      project.deliverables.forEach(deliverable => {
-        if (deliverable.dueDate < today && deliverable.status !== 'completed') {
-          // Marquer automatiquement comme en retard
-          deliverable.status = 'overdue';
-          overdueDeliverables.push({ project, deliverable });
-        }
-      });
-    });
-
-    return Promise.resolve(overdueDeliverables);
+  getProject: async (id: string): Promise<Project | null> => {
+    try {
+      const project = await apiService.get<Project>(API_ENDPOINTS.project(id));
+      return project;
+    } catch (error) {
+      console.error('Error fetching project from API, using fallback:', error);
+      return mockProjects.find(p => p.id === id) || null;
+    }
   },
 
-  getUpcomingDeadlines: (days: number = 7): Promise<{ project: Project; deliverable: Deliverable }[]> => {
-    const today = new Date();
-    const futureDate = new Date();
-    futureDate.setDate(today.getDate() + days);
-    
-    const todayStr = today.toISOString().split('T')[0];
-    const futureDateStr = futureDate.toISOString().split('T')[0];
-    
-    const upcomingDeliverables: { project: Project; deliverable: Deliverable }[] = [];
-
-    mockProjects.forEach(project => {
-      project.deliverables.forEach(deliverable => {
-        if (deliverable.dueDate >= todayStr && 
-            deliverable.dueDate <= futureDateStr && 
-            deliverable.status !== 'completed') {
-          upcomingDeliverables.push({ project, deliverable });
-        }
-      });
-    });
-
-    return Promise.resolve(upcomingDeliverables);
+  createProject: async (project: Omit<Project, 'id'>): Promise<Project> => {
+    try {
+      const newProject = await apiService.post<Project>(API_ENDPOINTS.projects, project);
+      return newProject;
+    } catch (error) {
+      console.error('Error creating project via API:', error);
+      throw new Error('Impossible de créer le projet');
+    }
   },
 
-  // Gestion des notifications
-  getNotifications: (): Promise<ProjectNotification[]> => {
-    return Promise.resolve(mockNotifications);
+  updateProject: async (id: string, updates: Partial<Project>): Promise<Project | null> => {
+    try {
+      const updatedProject = await apiService.put<Project>(API_ENDPOINTS.project(id), updates);
+      return updatedProject;
+    } catch (error) {
+      console.error('Error updating project via API:', error);
+      throw new Error('Impossible de mettre à jour le projet');
+    }
   },
 
-  createNotification: (notification: Omit<ProjectNotification, 'id' | 'createdDate' | 'read'>): Promise<ProjectNotification> => {
-    const newNotification: ProjectNotification = {
-      ...notification,
-      id: `notification-${Date.now()}`,
-      createdDate: new Date().toISOString(),
-      read: false
-    };
-    
-    mockNotifications.push(newNotification);
-    return Promise.resolve(newNotification);
+  deleteProject: async (id: string): Promise<boolean> => {
+    try {
+      await apiService.delete(API_ENDPOINTS.project(id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting project via API:', error);
+      return false;
+    }
   },
 
-  markNotificationAsRead: (notificationId: string): Promise<boolean> => {
-    const notification = mockNotifications.find(n => n.id === notificationId);
-    if (!notification) return Promise.resolve(false);
-    
-    notification.read = true;
-    return Promise.resolve(true);
+  addTask: async (projectId: string, task: Omit<Task, 'id'>): Promise<Task | null> => {
+    try {
+      const newTask = await apiService.post<Task>(`${API_ENDPOINTS.project(projectId)}/tasks`, task);
+      return newTask;
+    } catch (error) {
+      console.error('Error adding task via API:', error);
+      return null;
+    }
+  },
+
+  updateTaskProgress: async (projectId: string, taskId: string, progress: number): Promise<boolean> => {
+    try {
+      await apiService.patch(`${API_ENDPOINTS.project(projectId)}/tasks/${taskId}`, { progress });
+      return true;
+    } catch (error) {
+      console.error('Error updating task progress via API:', error);
+      return false;
+    }
+  },
+
+  addDeliverable: async (projectId: string, deliverable: Omit<Deliverable, 'id'>): Promise<Deliverable | null> => {
+    try {
+      const newDeliverable = await apiService.post<Deliverable>(`${API_ENDPOINTS.project(projectId)}/deliverables`, deliverable);
+      return newDeliverable;
+    } catch (error) {
+      console.error('Error adding deliverable via API:', error);
+      return null;
+    }
+  },
+
+  updateDeliverable: async (projectId: string, deliverableId: string, updates: Partial<Deliverable>): Promise<boolean> => {
+    try {
+      await apiService.put(`${API_ENDPOINTS.project(projectId)}/deliverables/${deliverableId}`, updates);
+      return true;
+    } catch (error) {
+      console.error('Error updating deliverable via API:', error);
+      return false;
+    }
+  },
+
+  getOverdueDeliverables: async (): Promise<{ project: Project; deliverable: Deliverable }[]> => {
+    try {
+      const result = await apiService.get<{ project: Project; deliverable: Deliverable }[]>('/projects/overdue-deliverables');
+      return result;
+    } catch (error) {
+      console.error('Error fetching overdue deliverables from API:', error);
+      return [];
+    }
+  },
+
+  getUpcomingDeadlines: async (days: number = 7): Promise<{ project: Project; deliverable: Deliverable }[]> => {
+    try {
+      const result = await apiService.get<{ project: Project; deliverable: Deliverable }[]>(`/projects/upcoming-deadlines?days=${days}`);
+      return result;
+    } catch (error) {
+      console.error('Error fetching upcoming deadlines from API:', error);
+      return [];
+    }
+  },
+
+  getNotifications: async (): Promise<ProjectNotification[]> => {
+    try {
+      const notifications = await apiService.get<ProjectNotification[]>('/projects/notifications');
+      return notifications;
+    } catch (error) {
+      console.error('Error fetching project notifications from API:', error);
+      return [];
+    }
+  },
+
+  createNotification: async (notification: Omit<ProjectNotification, 'id' | 'createdDate' | 'read'>): Promise<ProjectNotification> => {
+    try {
+      const newNotification = await apiService.post<ProjectNotification>('/projects/notifications', notification);
+      return newNotification;
+    } catch (error) {
+      console.error('Error creating notification via API:', error);
+      throw new Error('Impossible de créer la notification');
+    }
+  },
+
+  markNotificationAsRead: async (notificationId: string): Promise<boolean> => {
+    try {
+      await apiService.patch(`/projects/notifications/${notificationId}`, { read: true });
+      return true;
+    } catch (error) {
+      console.error('Error marking notification as read via API:', error);
+      return false;
+    }
   }
 };

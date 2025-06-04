@@ -1,4 +1,6 @@
 
+import { apiService } from './apiService';
+
 export interface SalaryCalculation {
   employeeId: string;
   baseSalary: number;
@@ -24,6 +26,7 @@ export interface Employee {
   baseSalary: number;
 }
 
+// Mock data pour fallback
 export const mockEmployees: Employee[] = [
   {
     id: '1',
@@ -55,17 +58,45 @@ export const mockEmployees: Employee[] = [
 ];
 
 export class SalaryCalculationService {
+  static async getEmployees(): Promise<Employee[]> {
+    try {
+      const employees = await apiService.get<Employee[]>('/salary/employees');
+      return employees;
+    } catch (error) {
+      console.error('Error fetching employees from API, using fallback:', error);
+      return mockEmployees;
+    }
+  }
+
+  static async saveSalaryCalculation(calculation: SalaryCalculation): Promise<void> {
+    try {
+      await apiService.post('/salary/calculations', calculation);
+    } catch (error) {
+      console.error('Error saving salary calculation via API:', error);
+      throw new Error('Impossible de sauvegarder le calcul de salaire');
+    }
+  }
+
+  static async getSalaryCalculations(month: string, year: string): Promise<SalaryCalculation[]> {
+    try {
+      const calculations = await apiService.get<SalaryCalculation[]>(`/salary/calculations?month=${month}&year=${year}`);
+      return calculations;
+    } catch (error) {
+      console.error('Error fetching salary calculations from API, using fallback:', error);
+      return this.generateBulkCalculations(month, year);
+    }
+  }
+
   static calculateSalary(
     employee: Employee,
-    workingHours: number = 152, // 35h/semaine * 4.34 semaines
+    workingHours: number = 152,
     overtimeHours: number = 0,
     bonuses: number = 0,
     deductions: number = 0
   ): SalaryCalculation {
     let grossSalary = 0;
-    const overtimeRate = employee.hourlyRate * 1.25; // 25% de majoration
+    const overtimeRate = employee.hourlyRate * 1.25;
 
-    // Calcul selon le type de salaire
     switch (employee.salaryType) {
       case 'hourly':
         grossSalary = (workingHours * employee.hourlyRate) + (overtimeHours * overtimeRate);
@@ -78,13 +109,10 @@ export class SalaryCalculationService {
         break;
     }
 
-    // Ajouter les primes
     grossSalary += bonuses;
 
-    // Calcul des cotisations sociales (environ 23% du brut)
     const socialContributions = grossSalary * 0.23;
 
-    // Calcul de l'impôt (simulation simple)
     const taxableIncome = grossSalary - socialContributions;
     let taxes = 0;
     if (taxableIncome > 3000) {
@@ -94,7 +122,6 @@ export class SalaryCalculationService {
       taxes += (taxableIncome - 4000) * 0.19;
     }
 
-    // Salaire net
     const netSalary = grossSalary - socialContributions - taxes - deductions;
 
     return {
@@ -115,11 +142,10 @@ export class SalaryCalculationService {
 
   static generateBulkCalculations(month: string, year: string): SalaryCalculation[] {
     return mockEmployees.map(employee => {
-      // Simulation de données variables par employé
-      const workingHours = 152 + Math.floor(Math.random() * 20) - 10; // 142-162h
-      const overtimeHours = Math.floor(Math.random() * 15); // 0-15h
-      const bonuses = Math.floor(Math.random() * 500); // 0-500€
-      const deductions = Math.floor(Math.random() * 100); // 0-100€
+      const workingHours = 152 + Math.floor(Math.random() * 20) - 10;
+      const overtimeHours = Math.floor(Math.random() * 15);
+      const bonuses = Math.floor(Math.random() * 500);
+      const deductions = Math.floor(Math.random() * 100);
 
       return this.calculateSalary(employee, workingHours, overtimeHours, bonuses, deductions);
     });

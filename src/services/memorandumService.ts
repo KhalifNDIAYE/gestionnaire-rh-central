@@ -1,4 +1,7 @@
 
+import { apiService } from './apiService';
+import { API_ENDPOINTS } from '../config/api';
+
 export interface Memorandum {
   id: string;
   title: string;
@@ -24,7 +27,7 @@ export interface ValidationStep {
   timestamp: string;
 }
 
-// Mock data
+// Mock data pour fallback
 const mockMemorandums: Memorandum[] = [
   {
     id: '1',
@@ -93,23 +96,23 @@ const mockMemorandums: Memorandum[] = [
 
 export const memorandumService = {
   async getMemorandums(): Promise<Memorandum[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockMemorandums), 300);
-    });
+    try {
+      const memorandums = await apiService.get<Memorandum[]>(API_ENDPOINTS.memorandums);
+      return memorandums;
+    } catch (error) {
+      console.error('Error fetching memorandums from API, using fallback:', error);
+      return mockMemorandums;
+    }
   },
 
   async createMemorandum(memorandum: Omit<Memorandum, 'id' | 'createdAt' | 'status' | 'validationHistory'>): Promise<Memorandum> {
-    return new Promise((resolve) => {
-      const newMemorandum: Memorandum = {
-        ...memorandum,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        status: 'level1_pending',
-        validationHistory: []
-      };
-      mockMemorandums.unshift(newMemorandum);
-      setTimeout(() => resolve(newMemorandum), 300);
-    });
+    try {
+      const newMemorandum = await apiService.post<Memorandum>(API_ENDPOINTS.memorandums, memorandum);
+      return newMemorandum;
+    } catch (error) {
+      console.error('Error creating memorandum via API:', error);
+      throw new Error('Impossible de créer le mémorandum');
+    }
   },
 
   async validateMemorandum(
@@ -119,37 +122,31 @@ export const memorandumService = {
     validatorInfo: { id: string; name: string; role: string },
     comment?: string
   ): Promise<Memorandum> {
-    return new Promise((resolve) => {
-      const memorandum = mockMemorandums.find(m => m.id === id);
-      if (memorandum) {
-        const validationStep: ValidationStep = {
-          level,
-          validatorId: validatorInfo.id,
-          validatorName: validatorInfo.name,
-          validatorRole: validatorInfo.role,
-          action,
-          comment,
-          timestamp: new Date().toISOString()
-        };
-
-        memorandum.validationHistory.push(validationStep);
-
-        if (action === 'rejected') {
-          memorandum.status = 'rejected';
-        } else if (level === 3) {
-          memorandum.status = 'approved';
-        } else {
-          memorandum.status = `level${level + 1}_pending` as any;
-        }
-      }
-      setTimeout(() => resolve(memorandum!), 300);
-    });
+    try {
+      const validationData = {
+        level,
+        action,
+        validatorInfo,
+        comment
+      };
+      const updatedMemorandum = await apiService.patch<Memorandum>(
+        `${API_ENDPOINTS.memorandum(id)}/validate`, 
+        validationData
+      );
+      return updatedMemorandum;
+    } catch (error) {
+      console.error('Error validating memorandum via API:', error);
+      throw new Error('Impossible de valider le mémorandum');
+    }
   },
 
   async getMemorandumsByStatus(status: Memorandum['status']): Promise<Memorandum[]> {
-    return new Promise((resolve) => {
-      const filtered = mockMemorandums.filter(m => m.status === status);
-      setTimeout(() => resolve(filtered), 300);
-    });
+    try {
+      const memorandums = await apiService.get<Memorandum[]>(`${API_ENDPOINTS.memorandums}?status=${status}`);
+      return memorandums;
+    } catch (error) {
+      console.error('Error fetching memorandums by status from API, using fallback:', error);
+      return mockMemorandums.filter(m => m.status === status);
+    }
   }
 };

@@ -1,4 +1,7 @@
 
+import { apiService } from './apiService';
+import { API_ENDPOINTS } from '../config/api';
+
 export interface OrganizationalUnit {
   id: string;
   name: string;
@@ -16,8 +19,6 @@ export interface OrganizationalUnit {
 }
 
 class OrganigrammeService {
-  private storageKey = 'organigramme_units';
-
   private getInitialUnits(): OrganizationalUnit[] {
     return [
       {
@@ -154,112 +155,78 @@ class OrganigrammeService {
     ];
   }
 
-  private getUnitsFromStorage(): OrganizationalUnit[] {
+  async getUnits(): Promise<OrganizationalUnit[]> {
     try {
-      const stored = localStorage.getItem(this.storageKey);
-      return stored ? JSON.parse(stored) : this.getInitialUnits();
-    } catch {
+      const units = await apiService.get<OrganizationalUnit[]>(API_ENDPOINTS.organizationalUnits);
+      return units;
+    } catch (error) {
+      console.error('Error fetching organizational units from API, using fallback:', error);
       return this.getInitialUnits();
     }
   }
 
-  private saveUnitsToStorage(units: OrganizationalUnit[]): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(units));
-  }
-
-  async getUnits(): Promise<OrganizationalUnit[]> {
-    await this.simulateDelay();
-    return this.getUnitsFromStorage();
-  }
-
   async getUnitById(id: string): Promise<OrganizationalUnit | null> {
-    await this.simulateDelay();
-    const units = this.getUnitsFromStorage();
-    return units.find(unit => unit.id === id) || null;
+    try {
+      const unit = await apiService.get<OrganizationalUnit>(API_ENDPOINTS.organizationalUnit(id));
+      return unit;
+    } catch (error) {
+      console.error('Error fetching unit from API, using fallback:', error);
+      const units = this.getInitialUnits();
+      return units.find(unit => unit.id === id) || null;
+    }
   }
 
   async createUnit(unitData: Omit<OrganizationalUnit, 'id' | 'createdAt' | 'updatedAt'>): Promise<OrganizationalUnit> {
-    await this.simulateDelay();
-    
-    const units = this.getUnitsFromStorage();
-    const newId = Date.now().toString();
-    
-    const newUnit: OrganizationalUnit = {
-      ...unitData,
-      id: newId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    units.push(newUnit);
-    this.saveUnitsToStorage(units);
-    
-    return newUnit;
+    try {
+      const newUnit = await apiService.post<OrganizationalUnit>(API_ENDPOINTS.organizationalUnits, unitData);
+      return newUnit;
+    } catch (error) {
+      console.error('Error creating unit via API:', error);
+      throw new Error('Impossible de créer l\'unité organisationnelle');
+    }
   }
 
   async updateUnit(id: string, updates: Partial<OrganizationalUnit>): Promise<OrganizationalUnit> {
-    await this.simulateDelay();
-    
-    const units = this.getUnitsFromStorage();
-    const index = units.findIndex(unit => unit.id === id);
-    
-    if (index === -1) {
-      throw new Error('Unité organisationnelle non trouvée');
+    try {
+      const updatedUnit = await apiService.put<OrganizationalUnit>(API_ENDPOINTS.organizationalUnit(id), updates);
+      return updatedUnit;
+    } catch (error) {
+      console.error('Error updating unit via API:', error);
+      throw new Error('Impossible de mettre à jour l\'unité organisationnelle');
     }
-
-    units[index] = {
-      ...units[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-
-    this.saveUnitsToStorage(units);
-    return units[index];
   }
 
   async deleteUnit(id: string): Promise<void> {
-    await this.simulateDelay();
-    
-    const units = this.getUnitsFromStorage();
-    const index = units.findIndex(unit => unit.id === id);
-    
-    if (index === -1) {
-      throw new Error('Unité organisationnelle non trouvée');
+    try {
+      await apiService.delete(API_ENDPOINTS.organizationalUnit(id));
+    } catch (error) {
+      console.error('Error deleting unit via API:', error);
+      throw new Error('Impossible de supprimer l\'unité organisationnelle');
     }
-
-    // Vérifier s'il y a des unités enfants
-    const hasChildren = units.some(unit => unit.parentId === id);
-    if (hasChildren) {
-      throw new Error('Impossible de supprimer une unité qui a des sous-unités');
-    }
-
-    units.splice(index, 1);
-    this.saveUnitsToStorage(units);
   }
 
   async getHierarchy(): Promise<OrganizationalUnit[]> {
-    await this.simulateDelay();
-    
-    const units = this.getUnitsFromStorage();
-    const rootUnits = units.filter(unit => !unit.parentId);
-    
-    const buildHierarchy = (parentId?: string): OrganizationalUnit[] => {
-      return units
-        .filter(unit => unit.parentId === parentId)
-        .map(unit => ({
-          ...unit,
-          children: buildHierarchy(unit.id),
-        }));
-    };
+    try {
+      const units = await this.getUnits();
+      const rootUnits = units.filter(unit => !unit.parentId);
+      
+      const buildHierarchy = (parentId?: string): OrganizationalUnit[] => {
+        return units
+          .filter(unit => unit.parentId === parentId)
+          .map(unit => ({
+            ...unit,
+            children: buildHierarchy(unit.id),
+          }));
+      };
 
-    return rootUnits.map(unit => ({
-      ...unit,
-      children: buildHierarchy(unit.id),
-    }));
-  }
-
-  private simulateDelay(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, 300));
+      return rootUnits.map(unit => ({
+        ...unit,
+        children: buildHierarchy(unit.id),
+      }));
+    } catch (error) {
+      console.error('Error building hierarchy:', error);
+      return [];
+    }
   }
 }
 
