@@ -7,6 +7,7 @@ import { communicationService, CommunicationAnnouncement } from '../../services/
 import { Calendar, MapPin, Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Autoplay from "embla-carousel-autoplay";
 
 const AnnouncementCarousel = () => {
   const [announcements, setAnnouncements] = useState<CommunicationAnnouncement[]>([]);
@@ -87,7 +88,14 @@ const AnnouncementCarousel = () => {
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
-      <Carousel className="w-full">
+      <Carousel 
+        className="w-full"
+        plugins={[
+          Autoplay({
+            delay: 15000, // 15 secondes
+          }),
+        ]}
+      >
         <CarouselContent>
           {announcements.map((announcement) => (
             <CarouselItem key={announcement.id}>
