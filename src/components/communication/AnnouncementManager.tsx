@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,7 +77,11 @@ const AnnouncementManager = () => {
   const handleSubmit = async (data: AnnouncementFormData) => {
     try {
       const announcementData = {
-        ...data,
+        title: data.title,
+        content: data.content,
+        type: data.type,
+        isActive: data.isActive,
+        priority: data.priority,
         authorId: 'admin',
         authorName: 'Administrateur',
         meetingDate: data.meetingDate || undefined,
