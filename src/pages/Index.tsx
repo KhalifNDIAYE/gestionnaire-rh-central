@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
@@ -12,6 +11,7 @@ import MemorandumPage from './MemorandumPage';
 import OrganigrammePage from './OrganigrammePage';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
+import DirectoryPage from './DirectoryPage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 
@@ -45,6 +45,8 @@ const AppContent = () => {
         return <MemorandumPage />;
       case 'organigramme':
         return <OrganigrammePage />;
+      case 'directory':
+        return <DirectoryPage />;
       case 'salary':
         return (
           <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
