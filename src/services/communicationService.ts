@@ -18,6 +18,11 @@ export interface CommunicationAnnouncement {
   updatedAt: string;
 }
 
+export interface CommunicationSettings {
+  carouselDuration: number; // en millisecondes
+  autoplay: boolean;
+}
+
 // Mock data pour fallback
 const mockAnnouncements: CommunicationAnnouncement[] = [
   {
@@ -63,6 +68,11 @@ const mockAnnouncements: CommunicationAnnouncement[] = [
   }
 ];
 
+const defaultSettings: CommunicationSettings = {
+  carouselDuration: 15000, // 15 secondes
+  autoplay: true
+};
+
 export const communicationService = {
   async getActiveAnnouncements(): Promise<CommunicationAnnouncement[]> {
     try {
@@ -100,6 +110,26 @@ export const communicationService = {
     } catch (error) {
       console.error('Error deleting announcement via API:', error);
       throw new Error('Impossible de supprimer l\'annonce');
+    }
+  },
+
+  async getCommunicationSettings(): Promise<CommunicationSettings> {
+    try {
+      const settings = await apiService.get<CommunicationSettings>('/communications/settings');
+      return settings;
+    } catch (error) {
+      console.error('Error fetching communication settings, using defaults:', error);
+      return defaultSettings;
+    }
+  },
+
+  async updateCommunicationSettings(settings: Partial<CommunicationSettings>): Promise<CommunicationSettings> {
+    try {
+      const updatedSettings = await apiService.put<CommunicationSettings>('/communications/settings', settings);
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating communication settings:', error);
+      throw new Error('Impossible de mettre à jour les paramètres de communication');
     }
   }
 };

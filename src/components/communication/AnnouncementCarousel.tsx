@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { communicationService, CommunicationAnnouncement } from '../../services/communicationService';
+import { communicationService, CommunicationAnnouncement, CommunicationSettings } from '../../services/communicationService';
 import { Calendar, MapPin, Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -11,24 +11,29 @@ import Autoplay from "embla-carousel-autoplay";
 
 const AnnouncementCarousel = () => {
   const [announcements, setAnnouncements] = useState<CommunicationAnnouncement[]>([]);
+  const [settings, setSettings] = useState<CommunicationSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadAnnouncements = async () => {
+    const loadData = async () => {
       try {
-        const data = await communicationService.getActiveAnnouncements();
-        setAnnouncements(data);
+        const [announcementsData, settingsData] = await Promise.all([
+          communicationService.getActiveAnnouncements(),
+          communicationService.getCommunicationSettings()
+        ]);
+        setAnnouncements(announcementsData);
+        setSettings(settingsData);
       } catch (error) {
-        console.error('Error loading announcements:', error);
+        console.error('Error loading data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadAnnouncements();
+    loadData();
     
-    // Actualiser les annonces toutes les 5 minutes
-    const interval = setInterval(loadAnnouncements, 5 * 60 * 1000);
+    // Actualiser les données toutes les 5 minutes
+    const interval = setInterval(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -86,15 +91,21 @@ const AnnouncementCarousel = () => {
     );
   }
 
+  // Configuration des plugins du carrousel
+  const carouselPlugins = [];
+  if (settings?.autoplay) {
+    carouselPlugins.push(
+      Autoplay({
+        delay: settings.carouselDuration || 15000,
+      })
+    );
+  }
+
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
       <Carousel 
         className="w-full"
-        plugins={[
-          Autoplay({
-            delay: 15000, // 15 secondes
-          }),
-        ]}
+        plugins={carouselPlugins}
       >
         <CarouselContent>
           {announcements.map((announcement) => (

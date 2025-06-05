@@ -9,14 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { communicationService, CommunicationAnnouncement } from '../../services/communicationService';
-import { Calendar, MapPin, Clock, User, Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { communicationService, CommunicationAnnouncement, CommunicationSettings } from '../../services/communicationService';
+import { Calendar, MapPin, Clock, User, Plus, Edit, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
+import ImageUpload from '../ui/image-upload';
 
 const announcementSchema = z.object({
   title: z.string().min(1, { message: 'Le titre est requis' }),
@@ -30,12 +31,20 @@ const announcementSchema = z.object({
   expirationDate: z.string().optional(),
 });
 
+const settingsSchema = z.object({
+  carouselDuration: z.number().min(3000).max(60000),
+  autoplay: z.boolean(),
+});
+
 type AnnouncementFormData = z.infer<typeof announcementSchema>;
+type SettingsFormData = z.infer<typeof settingsSchema>;
 
 const AnnouncementManager = () => {
   const [announcements, setAnnouncements] = useState<CommunicationAnnouncement[]>([]);
+  const [settings, setSettings] = useState<CommunicationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<CommunicationAnnouncement | null>(null);
 
   const form = useForm<AnnouncementFormData>({
@@ -53,20 +62,33 @@ const AnnouncementManager = () => {
     },
   });
 
+  const settingsForm = useForm<SettingsFormData>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: {
+      carouselDuration: 15000,
+      autoplay: true,
+    },
+  });
+
   useEffect(() => {
-    loadAnnouncements();
+    loadData();
   }, []);
 
-  const loadAnnouncements = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await communicationService.getActiveAnnouncements();
-      setAnnouncements(data);
+      const [announcementsData, settingsData] = await Promise.all([
+        communicationService.getActiveAnnouncements(),
+        communicationService.getCommunicationSettings()
+      ]);
+      setAnnouncements(announcementsData);
+      setSettings(settingsData);
+      settingsForm.reset(settingsData);
     } catch (error) {
-      console.error('Error loading announcements:', error);
+      console.error('Error loading data:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de charger les annonces.",
+        description: "Impossible de charger les données.",
         variant: "destructive",
       });
     } finally {
@@ -107,11 +129,30 @@ const AnnouncementManager = () => {
       setDialogOpen(false);
       setEditingAnnouncement(null);
       form.reset();
-      loadAnnouncements();
+      loadData();
     } catch (error) {
       toast({
         title: "Erreur",
         description: editingAnnouncement ? "Impossible de mettre à jour l'annonce." : "Impossible de créer l'annonce.",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
+  };
+
+  const handleSettingsSubmit = async (data: SettingsFormData) => {
+    try {
+      await communicationService.updateCommunicationSettings(data);
+      setSettings({ ...settings!, ...data });
+      toast({
+        title: "Paramètres mis à jour",
+        description: "Les paramètres du carrousel ont été mis à jour.",
+      });
+      setSettingsDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour les paramètres.",
         variant: "destructive",
       });
       console.error(error);
@@ -142,7 +183,7 @@ const AnnouncementManager = () => {
           title: "Annonce supprimée",
           description: "L'annonce a été supprimée avec succès.",
         });
-        loadAnnouncements();
+        loadData();
       } catch (error) {
         toast({
           title: "Erreur",
@@ -181,76 +222,113 @@ const AnnouncementManager = () => {
           <h3 className="text-lg font-medium">Gestion des annonces</h3>
           <p className="text-sm text-gray-500">Gérez les annonces qui s'affichent dans le carrousel de communication</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setEditingAnnouncement(null);
-              form.reset();
-            }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle annonce
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingAnnouncement ? 'Modifier l\'annonce' : 'Nouvelle annonce'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingAnnouncement ? 'Modifiez les informations de l\'annonce.' : 'Créez une nouvelle annonce pour le carrousel de communication.'}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Titre</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contenu</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} rows={3} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
+        <div className="flex gap-2">
+          <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Paramètres carrousel
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Paramètres du carrousel</DialogTitle>
+                <DialogDescription>
+                  Configurez le comportement du carrousel d'annonces
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...settingsForm}>
+                <form onSubmit={settingsForm.handleSubmit(handleSettingsSubmit)} className="space-y-4">
                   <FormField
-                    control={form.control}
-                    name="type"
+                    control={settingsForm.control}
+                    name="carouselDuration"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="info">Information</SelectItem>
-                            <SelectItem value="meeting">Réunion</SelectItem>
-                            <SelectItem value="news">Actualité</SelectItem>
-                            <SelectItem value="urgent">Urgent</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Durée d'affichage (millisecondes)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="3000" 
+                            max="60000" 
+                            step="1000"
+                            {...field} 
+                            onChange={e => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Entre 3 et 60 secondes (3000 - 60000ms)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={settingsForm.control}
+                    name="autoplay"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Lecture automatique</FormLabel>
+                          <FormDescription>
+                            Activer le défilement automatique du carrousel
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setSettingsDialogOpen(false)}>
+                      Annuler
+                    </Button>
+                    <Button type="submit">
+                      Sauvegarder
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
+                setEditingAnnouncement(null);
+                form.reset();
+              }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nouvelle annonce
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingAnnouncement ? 'Modifier l\'annonce' : 'Nouvelle annonce'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingAnnouncement ? 'Modifiez les informations de l\'annonce.' : 'Créez une nouvelle annonce pour le carrousel de communication.'}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Titre</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -258,50 +336,38 @@ const AnnouncementManager = () => {
                   
                   <FormField
                     control={form.control}
-                    name="priority"
+                    name="content"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Priorité (1-10)</FormLabel>
+                        <FormLabel>Contenu</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            max="10" 
-                            {...field} 
-                            onChange={e => field.onChange(parseInt(e.target.value))}
-                          />
+                          <Textarea {...field} rows={3} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL de l'image (optionnel)</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                {form.watch('type') === 'meeting' && (
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="meetingDate"
+                      name="type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date de la réunion</FormLabel>
-                          <FormControl>
-                            <Input type="datetime-local" {...field} />
-                          </FormControl>
+                          <FormLabel>Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="info">Information</SelectItem>
+                              <SelectItem value="meeting">Réunion</SelectItem>
+                              <SelectItem value="news">Actualité</SelectItem>
+                              <SelectItem value="urgent">Urgent</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -309,70 +375,124 @@ const AnnouncementManager = () => {
                     
                     <FormField
                       control={form.control}
-                      name="meetingLocation"
+                      name="priority"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Lieu de la réunion</FormLabel>
+                          <FormLabel>Priorité (1-10)</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              max="10" 
+                              {...field} 
+                              onChange={e => field.onChange(parseInt(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                )}
-                
-                <FormField
-                  control={form.control}
-                  name="expirationDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date d'expiration (optionnel)</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        L'annonce ne sera plus affichée après cette date
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Annonce active</FormLabel>
-                        <FormDescription>
-                          L'annonce sera affichée dans le carrousel
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                  
+                  <FormField
+                    control={form.control}
+                    name="imageUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <ImageUpload
+                          onImageChange={(imageUrl) => field.onChange(imageUrl || '')}
+                          currentImage={field.value}
+                          maxSizeInMB={2}
+                          acceptedFormats={['image/jpeg', 'image/png', 'image/webp', 'image/gif']}
                         />
-                      </FormControl>
-                    </FormItem>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {form.watch('type') === 'meeting' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="meetingDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Date de la réunion</FormLabel>
+                            <FormControl>
+                              <Input type="datetime-local" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="meetingLocation"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Lieu de la réunion</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   )}
-                />
-                
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    Annuler
-                  </Button>
-                  <Button type="submit">
-                    {editingAnnouncement ? 'Mettre à jour' : 'Créer'}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                  
+                  <FormField
+                    control={form.control}
+                    name="expirationDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date d'expiration (optionnel)</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          L'annonce ne sera plus affichée après cette date
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Annonce active</FormLabel>
+                          <FormDescription>
+                            L'annonce sera affichée dans le carrousel
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      Annuler
+                    </Button>
+                    <Button type="submit">
+                      {editingAnnouncement ? 'Mettre à jour' : 'Créer'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4">
