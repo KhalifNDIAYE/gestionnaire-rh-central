@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from '@/hooks/use-toast';
 import { settingsService, SystemSettings } from '../services/settingsService';
+import AnnouncementManager from '../components/communication/AnnouncementManager';
 
 const SettingsPage = () => {
   const { user } = useAuth();
@@ -214,6 +215,7 @@ const SettingsPage = () => {
           <TabsTrigger value="general">Général</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="appearance">Apparence</TabsTrigger>
+          <TabsTrigger value="communication">Communication</TabsTrigger>
           <TabsTrigger value="advanced">Avancé</TabsTrigger>
         </TabsList>
 
@@ -548,6 +550,21 @@ const SettingsPage = () => {
                   </div>
                 </form>
               </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Nouveau: Paramètres de communication */}
+        <TabsContent value="communication">
+          <Card>
+            <CardHeader>
+              <CardTitle>Communication</CardTitle>
+              <CardDescription>
+                Gérez les annonces et la communication dans l'application
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AnnouncementManager />
             </CardContent>
           </Card>
         </TabsContent>
