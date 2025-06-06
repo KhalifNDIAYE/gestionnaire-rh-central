@@ -18,7 +18,8 @@ import {
   BookOpen,
   Briefcase,
   FolderKanban,
-  Network
+  Network,
+  Contact
 } from 'lucide-react';
 
 interface MenuItem {
@@ -37,6 +38,7 @@ const menuItems: MenuItem[] = [
   { id: 'payroll', label: 'Bulletins de salaire', icon: FileText, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'] },
   { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
+  { id: 'directory', label: 'Annuaire', icon: Contact, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'profile', label: 'Mon profil', icon: User, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
   { id: 'organigramme', label: 'Organigramme', icon: Network, roles: ['admin', 'rh'] },
   { id: 'time-tracking', label: 'Pointage', icon: Clock, roles: ['admin', 'rh', 'agent'] },
