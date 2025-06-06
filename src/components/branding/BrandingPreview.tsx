@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 
 interface BrandingPreviewProps {
   brandingData: {
-    primaryColor: string;
-    primaryFontColor: string;
-    primaryGradientColor1: string;
-    secondaryColor: string;
-    secondaryFontColor: string;
-    primaryGradientColor2: string;
+    primaryColor?: string;
+    primaryFontColor?: string;
+    primaryGradientColor1?: string;
+    secondaryColor?: string;
+    secondaryFontColor?: string;
+    primaryGradientColor2?: string;
     clientLogo?: string;
     clientBanner?: string;
     loginBanner?: string;
@@ -18,6 +18,19 @@ interface BrandingPreviewProps {
 }
 
 const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
+  // Valeurs par défaut pour éviter les erreurs
+  const data = {
+    primaryColor: brandingData.primaryColor || '#3B82F6',
+    primaryFontColor: brandingData.primaryFontColor || '#FFFFFF',
+    primaryGradientColor1: brandingData.primaryGradientColor1 || '#3B82F6',
+    secondaryColor: brandingData.secondaryColor || '#64748B',
+    secondaryFontColor: brandingData.secondaryFontColor || '#FFFFFF',
+    primaryGradientColor2: brandingData.primaryGradientColor2 || '#1E40AF',
+    clientLogo: brandingData.clientLogo,
+    clientBanner: brandingData.clientBanner,
+    loginBanner: brandingData.loginBanner,
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -31,7 +44,7 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
             <div className="flex items-center space-x-2">
               <div 
                 className="w-8 h-8 rounded border"
-                style={{ backgroundColor: brandingData.primaryColor }}
+                style={{ backgroundColor: data.primaryColor }}
               />
               <span className="text-sm">Couleur primaire</span>
             </div>
@@ -39,8 +52,8 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
               <div 
                 className="w-8 h-8 rounded border flex items-center justify-center text-xs"
                 style={{ 
-                  backgroundColor: brandingData.primaryColor,
-                  color: brandingData.primaryFontColor 
+                  backgroundColor: data.primaryColor,
+                  color: data.primaryFontColor 
                 }}
               >
                 Aa
@@ -50,7 +63,7 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
             <div 
               className="w-full h-8 rounded border"
               style={{ 
-                background: `linear-gradient(to right, ${brandingData.primaryGradientColor1}, ${brandingData.primaryGradientColor2})` 
+                background: `linear-gradient(to right, ${data.primaryGradientColor1}, ${data.primaryGradientColor2})` 
               }}
             />
             <span className="text-sm">Dégradé primaire</span>
@@ -61,7 +74,7 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
             <div className="flex items-center space-x-2">
               <div 
                 className="w-8 h-8 rounded border"
-                style={{ backgroundColor: brandingData.secondaryColor }}
+                style={{ backgroundColor: data.secondaryColor }}
               />
               <span className="text-sm">Couleur secondaire</span>
             </div>
@@ -69,8 +82,8 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
               <div 
                 className="w-8 h-8 rounded border flex items-center justify-center text-xs"
                 style={{ 
-                  backgroundColor: brandingData.secondaryColor,
-                  color: brandingData.secondaryFontColor 
+                  backgroundColor: data.secondaryColor,
+                  color: data.secondaryFontColor 
                 }}
               >
                 Aa
@@ -84,10 +97,10 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
         <div className="space-y-4">
           <h4 className="font-medium">Logos et Images</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {brandingData.clientLogo && (
+            {data.clientLogo && (
               <div className="text-center">
                 <img 
-                  src={brandingData.clientLogo} 
+                  src={data.clientLogo} 
                   alt="Logo Client" 
                   className="w-12 h-12 mx-auto object-contain border rounded"
                 />
@@ -95,10 +108,10 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
               </div>
             )}
             
-            {brandingData.clientBanner && (
+            {data.clientBanner && (
               <div className="text-center">
                 <img 
-                  src={brandingData.clientBanner} 
+                  src={data.clientBanner} 
                   alt="Bannière Client" 
                   className="w-full h-12 mx-auto object-contain border rounded"
                 />
@@ -106,10 +119,10 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
               </div>
             )}
             
-            {brandingData.loginBanner && (
+            {data.loginBanner && (
               <div className="text-center">
                 <img 
-                  src={brandingData.loginBanner} 
+                  src={data.loginBanner} 
                   alt="Bannière de Connexion" 
                   className="w-full h-16 mx-auto object-contain border rounded"
                 />
@@ -125,8 +138,8 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
           <div className="flex space-x-2">
             <Button 
               style={{ 
-                backgroundColor: brandingData.primaryColor,
-                color: brandingData.primaryFontColor 
+                backgroundColor: data.primaryColor,
+                color: data.primaryFontColor 
               }}
             >
               Bouton Primaire
@@ -134,8 +147,8 @@ const BrandingPreview: React.FC<BrandingPreviewProps> = ({ brandingData }) => {
             <Button 
               variant="outline"
               style={{ 
-                borderColor: brandingData.secondaryColor,
-                color: brandingData.secondaryColor 
+                borderColor: data.secondaryColor,
+                color: data.secondaryColor 
               }}
             >
               Bouton Secondaire

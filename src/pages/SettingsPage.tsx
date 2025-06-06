@@ -129,18 +129,16 @@ const SettingsPage = () => {
         notificationForm.reset(data.notifications);
         appearanceForm.reset(data.appearance);
         
-        // Initialiser le formulaire de branding avec des valeurs par défaut
-        brandingForm.reset({
-          primaryColor: '#3B82F6',
-          primaryFontColor: '#FFFFFF',
-          primaryGradientColor1: '#3B82F6',
-          secondaryColor: '#64748B',
-          secondaryFontColor: '#FFFFFF',
-          primaryGradientColor2: '#1E40AF',
-          clientLogo: '',
-          clientBanner: '',
-          loginBanner: '',
-        });
+        // Charger la configuration de branding existante
+        const existingBranding = localStorage.getItem('corporate_branding');
+        if (existingBranding) {
+          try {
+            const brandingData = JSON.parse(existingBranding);
+            brandingForm.reset(brandingData);
+          } catch (error) {
+            console.error('Error loading branding configuration:', error);
+          }
+        }
       } catch (error) {
         console.error('Error loading settings:', error);
       }
@@ -242,33 +240,18 @@ const SettingsPage = () => {
       
       // Appliquer immédiatement les nouvelles couleurs aux variables CSS
       const root = document.documentElement;
+      root.style.setProperty('--primary', data.primaryColor);
+      root.style.setProperty('--primary-foreground', data.primaryFontColor);
+      root.style.setProperty('--secondary', data.secondaryColor);
+      root.style.setProperty('--secondary-foreground', data.secondaryFontColor);
+      
+      // Créer des variables CSS custom pour le branding
       root.style.setProperty('--brand-primary', data.primaryColor);
       root.style.setProperty('--brand-primary-font', data.primaryFontColor);
       root.style.setProperty('--brand-secondary', data.secondaryColor);
       root.style.setProperty('--brand-secondary-font', data.secondaryFontColor);
       root.style.setProperty('--brand-gradient-1', data.primaryGradientColor1);
       root.style.setProperty('--brand-gradient-2', data.primaryGradientColor2);
-      
-      // Forcer le rechargement des styles
-      const styleSheets = document.styleSheets;
-      for (let i = 0; i < styleSheets.length; i++) {
-        try {
-          const styleSheet = styleSheets[i];
-          if (styleSheet.href) {
-            const newLink = document.createElement('link');
-            newLink.rel = 'stylesheet';
-            newLink.href = styleSheet.href + '?v=' + Date.now();
-            document.head.appendChild(newLink);
-            setTimeout(() => {
-              if (styleSheet.ownerNode && styleSheet.ownerNode.parentNode) {
-                styleSheet.ownerNode.parentNode.removeChild(styleSheet.ownerNode);
-              }
-            }, 100);
-          }
-        } catch (e) {
-          console.log('Cannot reload stylesheet:', e);
-        }
-      }
       
       toast({
         title: "Configuration appliquée",
@@ -292,7 +275,6 @@ const SettingsPage = () => {
 
   // Fonction pour prévisualiser les changements
   const handleBrandingPreview = () => {
-    const currentValues = brandingForm.getValues();
     setShowBrandingPreview(true);
   };
 
@@ -302,10 +284,13 @@ const SettingsPage = () => {
     if (existingBranding) {
       try {
         const brandingData = JSON.parse(existingBranding);
-        brandingForm.reset(brandingData);
         
         // Appliquer les couleurs au CSS
         const root = document.documentElement;
+        root.style.setProperty('--primary', brandingData.primaryColor);
+        root.style.setProperty('--primary-foreground', brandingData.primaryFontColor);
+        root.style.setProperty('--secondary', brandingData.secondaryColor);
+        root.style.setProperty('--secondary-foreground', brandingData.secondaryFontColor);
         root.style.setProperty('--brand-primary', brandingData.primaryColor);
         root.style.setProperty('--brand-primary-font', brandingData.primaryFontColor);
         root.style.setProperty('--brand-secondary', brandingData.secondaryColor);
@@ -897,10 +882,8 @@ const SettingsPage = () => {
               </CardContent>
             </Card>
 
-            {/* Aperçu en temps réel */}
-            {showBrandingPreview && (
-              <BrandingPreview brandingData={brandingForm.watch()} />
-            )}
+            {/* Aperçu en temps réel - maintenant toujours visible */}
+            <BrandingPreview brandingData={brandingForm.watch()} />
           </div>
         </TabsContent>
 
