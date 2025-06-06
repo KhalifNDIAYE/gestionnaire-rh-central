@@ -14,6 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import { settingsService, SystemSettings } from '../services/settingsService';
 import AnnouncementManager from '../components/communication/AnnouncementManager';
 import ImageUpload from '../components/ui/image-upload';
+import BrandingPreview from '../components/branding/BrandingPreview';
 
 // Schéma pour la configuration du branding
 const brandingFormSchema = z.object({
@@ -28,74 +29,37 @@ const brandingFormSchema = z.object({
   loginBanner: z.string().optional(),
 });
 
+// Schéma pour les paramètres généraux
+const generalFormSchema = z.object({
+  appName: z.string().min(1, { message: 'Le nom de l\'application est requis' }),
+  companyName: z.string().min(1, { message: 'Le nom de l\'entreprise est requis' }),
+  companyAddress: z.string().optional(),
+  companyPhone: z.string().optional(),
+  companyEmail: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
+});
+
+// Schéma pour les paramètres de notification
+const notificationFormSchema = z.object({
+  emailNotifications: z.boolean(),
+  appNotifications: z.boolean(),
+  leaveRequestNotify: z.boolean(),
+  payrollNotify: z.boolean(),
+  newEmployeeNotify: z.boolean(),
+});
+
+// Schéma pour les paramètres d'apparence
+const appearanceFormSchema = z.object({
+  theme: z.enum(['light', 'dark', 'system']),
+  fontSize: z.enum(['small', 'medium', 'large']),
+  language: z.enum(['fr', 'en']),
+  sidebarCollapsed: z.boolean(),
+});
+
 const SettingsPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
-
-  // Charger les paramètres au montage du composant
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const data = await settingsService.getSettings();
-        setSettings(data);
-        
-        // Mettre à jour les valeurs par défaut des formulaires
-        generalForm.reset({
-          appName: data.general.appName,
-          companyName: data.general.companyName,
-          companyAddress: data.general.companyAddress || '',
-          companyPhone: data.general.companyPhone || '',
-          companyEmail: data.general.companyEmail || '',
-        });
-        
-        notificationForm.reset(data.notifications);
-        appearanceForm.reset(data.appearance);
-        
-        // Initialiser le formulaire de branding avec des valeurs par défaut
-        brandingForm.reset({
-          primaryColor: '#3B82F6',
-          primaryFontColor: '#FFFFFF',
-          primaryGradientColor1: '#3B82F6',
-          secondaryColor: '#64748B',
-          secondaryFontColor: '#FFFFFF',
-          primaryGradientColor2: '#1E40AF',
-          clientLogo: '',
-          clientBanner: '',
-          loginBanner: '',
-        });
-      } catch (error) {
-        console.error('Error loading settings:', error);
-      }
-    };
-    loadSettings();
-  }, []);
-
-  // Schéma pour les paramètres généraux
-  const generalFormSchema = z.object({
-    appName: z.string().min(1, { message: 'Le nom de l\'application est requis' }),
-    companyName: z.string().min(1, { message: 'Le nom de l\'entreprise est requis' }),
-    companyAddress: z.string().optional(),
-    companyPhone: z.string().optional(),
-    companyEmail: z.string().email({ message: 'Email invalide' }).optional().or(z.literal('')),
-  });
-
-  // Schéma pour les paramètres de notification
-  const notificationFormSchema = z.object({
-    emailNotifications: z.boolean(),
-    appNotifications: z.boolean(),
-    leaveRequestNotify: z.boolean(),
-    payrollNotify: z.boolean(),
-    newEmployeeNotify: z.boolean(),
-  });
-
-  // Schéma pour les paramètres d'apparence
-  const appearanceFormSchema = z.object({
-    theme: z.enum(['light', 'dark', 'system']),
-    fontSize: z.enum(['small', 'medium', 'large']),
-    language: z.enum(['fr', 'en']),
-    sidebarCollapsed: z.boolean(),
-  });
+  const [showBrandingPreview, setShowBrandingPreview] = useState(false);
 
   // Formulaires avec valeurs par défaut
   const generalForm = useForm<z.infer<typeof generalFormSchema>>({
@@ -145,6 +109,44 @@ const SettingsPage = () => {
       loginBanner: '',
     },
   });
+
+  // Charger les paramètres au montage du composant
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await settingsService.getSettings();
+        setSettings(data);
+        
+        // Mettre à jour les valeurs par défaut des formulaires
+        generalForm.reset({
+          appName: data.general.appName,
+          companyName: data.general.companyName,
+          companyAddress: data.general.companyAddress || '',
+          companyPhone: data.general.companyPhone || '',
+          companyEmail: data.general.companyEmail || '',
+        });
+        
+        notificationForm.reset(data.notifications);
+        appearanceForm.reset(data.appearance);
+        
+        // Initialiser le formulaire de branding avec des valeurs par défaut
+        brandingForm.reset({
+          primaryColor: '#3B82F6',
+          primaryFontColor: '#FFFFFF',
+          primaryGradientColor1: '#3B82F6',
+          secondaryColor: '#64748B',
+          secondaryFontColor: '#FFFFFF',
+          primaryGradientColor2: '#1E40AF',
+          clientLogo: '',
+          clientBanner: '',
+          loginBanner: '',
+        });
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   // Gestionnaires pour sauvegarder les paramètres
   const handleGeneralSubmit = async (data: z.infer<typeof generalFormSchema>) => {
@@ -230,21 +232,56 @@ const SettingsPage = () => {
     }
   };
 
-  // Nouveau gestionnaire pour le branding
+  // Gestionnaire amélioré pour le branding avec système de prévisualisation
   const handleBrandingSubmit = async (data: z.infer<typeof brandingFormSchema>) => {
     try {
       setLoading(true);
-      // Sauvegarder la configuration de branding dans le localStorage pour le moment
+      
+      // Sauvegarder la configuration de branding dans le localStorage
       localStorage.setItem('corporate_branding', JSON.stringify(data));
       
+      // Appliquer immédiatement les nouvelles couleurs aux variables CSS
+      const root = document.documentElement;
+      root.style.setProperty('--brand-primary', data.primaryColor);
+      root.style.setProperty('--brand-primary-font', data.primaryFontColor);
+      root.style.setProperty('--brand-secondary', data.secondaryColor);
+      root.style.setProperty('--brand-secondary-font', data.secondaryFontColor);
+      root.style.setProperty('--brand-gradient-1', data.primaryGradientColor1);
+      root.style.setProperty('--brand-gradient-2', data.primaryGradientColor2);
+      
+      // Forcer le rechargement des styles
+      const styleSheets = document.styleSheets;
+      for (let i = 0; i < styleSheets.length; i++) {
+        try {
+          const styleSheet = styleSheets[i];
+          if (styleSheet.href) {
+            const newLink = document.createElement('link');
+            newLink.rel = 'stylesheet';
+            newLink.href = styleSheet.href + '?v=' + Date.now();
+            document.head.appendChild(newLink);
+            setTimeout(() => {
+              if (styleSheet.ownerNode && styleSheet.ownerNode.parentNode) {
+                styleSheet.ownerNode.parentNode.removeChild(styleSheet.ownerNode);
+              }
+            }, 100);
+          }
+        } catch (e) {
+          console.log('Cannot reload stylesheet:', e);
+        }
+      }
+      
       toast({
-        title: "Configuration mise à jour",
-        description: "La configuration du branding corporatif a été mise à jour avec succès.",
+        title: "Configuration appliquée",
+        description: "La configuration du branding corporatif a été mise à jour et appliquée avec succès.",
       });
+      
+      // Fermer l'aperçu après application
+      setShowBrandingPreview(false);
+      
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Une erreur s'est produite lors de la mise à jour de la configuration.",
+        description: "Une erreur s'est produite lors de l'application de la configuration.",
         variant: "destructive",
       });
       console.error(error);
@@ -252,6 +289,34 @@ const SettingsPage = () => {
       setLoading(false);
     }
   };
+
+  // Fonction pour prévisualiser les changements
+  const handleBrandingPreview = () => {
+    const currentValues = brandingForm.getValues();
+    setShowBrandingPreview(true);
+  };
+
+  // Charger et appliquer la configuration existante au montage
+  useEffect(() => {
+    const existingBranding = localStorage.getItem('corporate_branding');
+    if (existingBranding) {
+      try {
+        const brandingData = JSON.parse(existingBranding);
+        brandingForm.reset(brandingData);
+        
+        // Appliquer les couleurs au CSS
+        const root = document.documentElement;
+        root.style.setProperty('--brand-primary', brandingData.primaryColor);
+        root.style.setProperty('--brand-primary-font', brandingData.primaryFontColor);
+        root.style.setProperty('--brand-secondary', brandingData.secondaryColor);
+        root.style.setProperty('--brand-secondary-font', brandingData.secondaryFontColor);
+        root.style.setProperty('--brand-gradient-1', brandingData.primaryGradientColor1);
+        root.style.setProperty('--brand-gradient-2', brandingData.primaryGradientColor2);
+      } catch (error) {
+        console.error('Error loading branding configuration:', error);
+      }
+    }
+  }, []);
 
   // Vérifier les permissions
   if (!user || user.role !== 'admin') {
@@ -621,33 +686,148 @@ const SettingsPage = () => {
           </Card>
         </TabsContent>
 
-        {/* Nouveau: Configuration du branding */}
+        {/* Configuration du branding améliorée */}
         <TabsContent value="configuration">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuration du Branding Corporatif</CardTitle>
-              <CardDescription>
-                Personnalisez l'apparence de votre application avec vos couleurs et logos
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...brandingForm}>
-                <form onSubmit={brandingForm.handleSubmit(handleBrandingSubmit)} className="space-y-6">
-                  {/* Section Couleurs */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Couleurs</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Formulaire de configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuration du Branding Corporatif</CardTitle>
+                <CardDescription>
+                  Personnalisez l'apparence de votre application avec vos couleurs et logos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...brandingForm}>
+                  <form onSubmit={brandingForm.handleSubmit(handleBrandingSubmit)} className="space-y-6">
+                    {/* Section Couleurs */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Couleurs</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={brandingForm.control}
+                          name="primaryColor"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Couleur Primaire</FormLabel>
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <Input {...field} type="color" className="w-16 h-10 p-1" />
+                                  <Input {...field} placeholder="#3B82F6" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={brandingForm.control}
+                          name="primaryFontColor"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Couleur Police Primaire</FormLabel>
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <Input {...field} type="color" className="w-16 h-10 p-1" />
+                                  <Input {...field} placeholder="#FFFFFF" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={brandingForm.control}
+                          name="secondaryColor"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Couleur Secondaire</FormLabel>
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <Input {...field} type="color" className="w-16 h-10 p-1" />
+                                  <Input {...field} placeholder="#64748B" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={brandingForm.control}
+                          name="secondaryFontColor"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Couleur Police Secondaire</FormLabel>
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <Input {...field} type="color" className="w-16 h-10 p-1" />
+                                  <Input {...field} placeholder="#FFFFFF" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={brandingForm.control}
+                          name="primaryGradientColor1"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Couleur Dégradé 1</FormLabel>
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <Input {...field} type="color" className="w-16 h-10 p-1" />
+                                  <Input {...field} placeholder="#3B82F6" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={brandingForm.control}
+                          name="primaryGradientColor2"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Couleur Dégradé 2</FormLabel>
+                              <FormControl>
+                                <div className="flex items-center space-x-2">
+                                  <Input {...field} type="color" className="w-16 h-10 p-1" />
+                                  <Input {...field} placeholder="#1E40AF" />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section Logos */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Logos et Images</h3>
+                      
                       <FormField
                         control={brandingForm.control}
-                        name="primaryColor"
+                        name="clientLogo"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Couleur Primaire</FormLabel>
+                            <FormLabel>Logo Client</FormLabel>
+                            <FormDescription>
+                              Dimensions recommandées: 50px × 50px • Formats acceptés: JPG, PNG, GIF, SVG • Taille max: 1 Mo
+                            </FormDescription>
                             <FormControl>
-                              <div className="flex items-center space-x-2">
-                                <Input {...field} type="color" className="w-16 h-10 p-1" />
-                                <Input {...field} placeholder="#3B82F6" />
-                              </div>
+                              <ImageUpload
+                                onImageChange={field.onChange}
+                                currentImage={field.value}
+                                maxSizeInMB={1}
+                                acceptedFormats={['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -656,15 +836,20 @@ const SettingsPage = () => {
                       
                       <FormField
                         control={brandingForm.control}
-                        name="primaryFontColor"
+                        name="clientBanner"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Couleur Police Primaire</FormLabel>
+                            <FormLabel>Bannière Client</FormLabel>
+                            <FormDescription>
+                              Dimensions recommandées: 182px × 50px • Formats acceptés: JPG, PNG, GIF, SVG • Taille max: 1 Mo
+                            </FormDescription>
                             <FormControl>
-                              <div className="flex items-center space-x-2">
-                                <Input {...field} type="color" className="w-16 h-10 p-1" />
-                                <Input {...field} placeholder="#FFFFFF" />
-                              </div>
+                              <ImageUpload
+                                onImageChange={field.onChange}
+                                currentImage={field.value}
+                                maxSizeInMB={1}
+                                acceptedFormats={['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -673,154 +858,50 @@ const SettingsPage = () => {
                       
                       <FormField
                         control={brandingForm.control}
-                        name="secondaryColor"
+                        name="loginBanner"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Couleur Secondaire</FormLabel>
+                            <FormLabel>Bannière de Connexion</FormLabel>
+                            <FormDescription>
+                              Dimensions recommandées: 340px × 65px • Formats acceptés: JPG, PNG, GIF, SVG • Taille max: 1 Mo
+                            </FormDescription>
                             <FormControl>
-                              <div className="flex items-center space-x-2">
-                                <Input {...field} type="color" className="w-16 h-10 p-1" />
-                                <Input {...field} placeholder="#64748B" />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={brandingForm.control}
-                        name="secondaryFontColor"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Couleur Police Secondaire</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center space-x-2">
-                                <Input {...field} type="color" className="w-16 h-10 p-1" />
-                                <Input {...field} placeholder="#FFFFFF" />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={brandingForm.control}
-                        name="primaryGradientColor1"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Couleur Dégradé 1</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center space-x-2">
-                                <Input {...field} type="color" className="w-16 h-10 p-1" />
-                                <Input {...field} placeholder="#3B82F6" />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={brandingForm.control}
-                        name="primaryGradientColor2"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Couleur Dégradé 2</FormLabel>
-                            <FormControl>
-                              <div className="flex items-center space-x-2">
-                                <Input {...field} type="color" className="w-16 h-10 p-1" />
-                                <Input {...field} placeholder="#1E40AF" />
-                              </div>
+                              <ImageUpload
+                                onImageChange={field.onChange}
+                                currentImage={field.value}
+                                maxSizeInMB={1}
+                                acceptedFormats={['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-                  </div>
 
-                  {/* Section Logos */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Logos et Images</h3>
-                    
-                    <FormField
-                      control={brandingForm.control}
-                      name="clientLogo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Logo Client</FormLabel>
-                          <FormDescription>
-                            Dimensions recommandées: 50px × 50px • Formats acceptés: JPG, PNG, GIF, SVG • Taille max: 1 Mo
-                          </FormDescription>
-                          <FormControl>
-                            <ImageUpload
-                              onImageChange={field.onChange}
-                              currentImage={field.value}
-                              maxSizeInMB={1}
-                              acceptedFormats={['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={brandingForm.control}
-                      name="clientBanner"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bannière Client</FormLabel>
-                          <FormDescription>
-                            Dimensions recommandées: 182px × 50px • Formats acceptés: JPG, PNG, GIF, SVG • Taille max: 1 Mo
-                          </FormDescription>
-                          <FormControl>
-                            <ImageUpload
-                              onImageChange={field.onChange}
-                              currentImage={field.value}
-                              maxSizeInMB={1}
-                              acceptedFormats={['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={brandingForm.control}
-                      name="loginBanner"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bannière de Connexion</FormLabel>
-                          <FormDescription>
-                            Dimensions recommandées: 340px × 65px • Formats acceptés: JPG, PNG, GIF, SVG • Taille max: 1 Mo
-                          </FormDescription>
-                          <FormControl>
-                            <ImageUpload
-                              onImageChange={field.onChange}
-                              currentImage={field.value}
-                              maxSizeInMB={1}
-                              acceptedFormats={['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                    <div className="flex justify-between items-center mt-6">
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={handleBrandingPreview}
+                        disabled={loading}
+                      >
+                        Prévisualiser
+                      </Button>
+                      <Button type="submit" disabled={loading}>
+                        {loading ? "Application..." : "Appliquer la Configuration"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
 
-                  <div className="flex justify-end mt-6">
-                    <Button type="submit" disabled={loading}>
-                      {loading ? "Sauvegarde..." : "Sauvegarder la Configuration"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+            {/* Aperçu en temps réel */}
+            {showBrandingPreview && (
+              <BrandingPreview brandingData={brandingForm.watch()} />
+            )}
+          </div>
         </TabsContent>
 
         {/* Nouveau: Paramètres de communication */}
