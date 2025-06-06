@@ -59,7 +59,6 @@ const SettingsPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
-  const [showBrandingPreview, setShowBrandingPreview] = useState(false);
 
   // Formulaires avec valeurs par défaut
   const generalForm = useForm<z.infer<typeof generalFormSchema>>({
@@ -230,7 +229,7 @@ const SettingsPage = () => {
     }
   };
 
-  // Gestionnaire amélioré pour le branding avec système de prévisualisation
+  // Gestionnaire simplifié pour le branding
   const handleBrandingSubmit = async (data: z.infer<typeof brandingFormSchema>) => {
     try {
       setLoading(true);
@@ -257,9 +256,6 @@ const SettingsPage = () => {
         title: "Configuration appliquée",
         description: "La configuration du branding corporatif a été mise à jour et appliquée avec succès.",
       });
-      
-      // Fermer l'aperçu après application
-      setShowBrandingPreview(false);
       
     } catch (error) {
       toast({
@@ -864,15 +860,7 @@ const SettingsPage = () => {
                       />
                     </div>
 
-                    <div className="flex justify-between items-center mt-6">
-                      <Button 
-                        type="button" 
-                        variant="outline"
-                        onClick={handleBrandingPreview}
-                        disabled={loading}
-                      >
-                        Prévisualiser
-                      </Button>
+                    <div className="flex justify-end mt-6">
                       <Button type="submit" disabled={loading}>
                         {loading ? "Application..." : "Appliquer la Configuration"}
                       </Button>
@@ -882,7 +870,7 @@ const SettingsPage = () => {
               </CardContent>
             </Card>
 
-            {/* Aperçu en temps réel - maintenant toujours visible */}
+            {/* Aperçu en temps réel - toujours visible */}
             <BrandingPreview brandingData={brandingForm.watch()} />
           </div>
         </TabsContent>
