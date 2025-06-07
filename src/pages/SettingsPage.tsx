@@ -269,11 +269,6 @@ const SettingsPage = () => {
     }
   };
 
-  // Fonction pour prévisualiser les changements
-  const handleBrandingPreview = () => {
-    setShowBrandingPreview(true);
-  };
-
   // Charger et appliquer la configuration existante au montage
   useEffect(() => {
     const existingBranding = localStorage.getItem('corporate_branding');
