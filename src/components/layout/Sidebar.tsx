@@ -27,23 +27,38 @@ interface MenuItem {
   label: string;
   icon: React.ElementType;
   roles: string[];
+  group: 'principal' | 'rh' | 'finance' | 'parametrages';
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: Home, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
-  { id: 'employees', label: 'Gestion des agents', icon: Users, roles: ['admin', 'rh'] },
-  { id: 'functions', label: 'Gestion des fonctions', icon: Briefcase, roles: ['admin'] },
-  { id: 'projects', label: 'Gestion des projets', icon: FolderKanban, roles: ['admin', 'gestionnaire'] },
-  { id: 'leave-requests', label: 'Demandes de congés', icon: Calendar, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
-  { id: 'payroll', label: 'Bulletins de salaire', icon: FileText, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
-  { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'] },
-  { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
-  { id: 'directory', label: 'Annuaire', icon: Contact, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
-  { id: 'profile', label: 'Mon profil', icon: User, roles: ['admin', 'rh', 'gestionnaire', 'agent'] },
-  { id: 'organigramme', label: 'Organigramme', icon: Network, roles: ['admin', 'rh'] },
-  { id: 'time-tracking', label: 'Pointage', icon: Clock, roles: ['admin', 'rh', 'agent'] },
-  { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['admin'] },
+  // MENU PRINCIPAL
+  { id: 'dashboard', label: 'Tableau de bord', icon: Home, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
+  { id: 'directory', label: 'Annuaire', icon: Contact, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
+  { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
+  { id: 'profile', label: 'Mon profil', icon: User, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
+  
+  // GESTION RH
+  { id: 'employees', label: 'Gestion des agents', icon: Users, roles: ['admin', 'rh'], group: 'rh' },
+  { id: 'functions', label: 'Gestion des fonctions', icon: Briefcase, roles: ['admin'], group: 'rh' },
+  { id: 'leave-requests', label: 'Demandes de congés', icon: Calendar, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'rh' },
+  { id: 'organigramme', label: 'Organigramme', icon: Network, roles: ['admin', 'rh'], group: 'rh' },
+  { id: 'time-tracking', label: 'Pointage', icon: Clock, roles: ['admin', 'rh', 'agent'], group: 'rh' },
+  
+  // GESTION FINANCIERE
+  { id: 'payroll', label: 'Bulletins de salaire', icon: FileText, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'finance' },
+  { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'], group: 'finance' },
+  { id: 'projects', label: 'Gestion des projets', icon: FolderKanban, roles: ['admin', 'gestionnaire'], group: 'finance' },
+  
+  // PARAMETRAGES
+  { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['admin'], group: 'parametrages' },
 ];
+
+const menuGroups = {
+  principal: 'MENU PRINCIPAL',
+  rh: 'GESTION RH',
+  finance: 'GESTION FINANCIÈRE',
+  parametrages: 'PARAMÉTRAGES'
+};
 
 interface SidebarProps {
   activeItem?: string;
@@ -57,6 +72,15 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
   const filteredMenuItems = menuItems.filter(item => 
     item.roles.includes(user?.role || '')
   );
+
+  // Grouper les éléments par catégorie
+  const groupedItems = filteredMenuItems.reduce((acc, item) => {
+    if (!acc[item.group]) {
+      acc[item.group] = [];
+    }
+    acc[item.group].push(item);
+    return acc;
+  }, {} as Record<string, MenuItem[]>);
 
   const handleItemClick = (itemId: string) => {
     console.log(`Navigation vers: ${itemId}`);
@@ -89,27 +113,38 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
-        {filteredMenuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeItem === item.id;
-          
-          return (
-            <Button
-              key={item.id}
-              variant={isActive ? "default" : "ghost"}
-              className={cn(
-                "w-full justify-start text-left",
-                collapsed ? "px-2" : "px-3",
-                isActive && "bg-blue-600 text-white hover:bg-blue-700"
-              )}
-              onClick={() => handleItemClick(item.id)}
-            >
-              <Icon className={cn("w-5 h-5", collapsed ? "" : "mr-3")} />
-              {!collapsed && <span>{item.label}</span>}
-            </Button>
-          );
-        })}
+      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+        {Object.entries(groupedItems).map(([groupKey, items]) => (
+          <div key={groupKey} className="space-y-2">
+            {!collapsed && (
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3">
+                {menuGroups[groupKey as keyof typeof menuGroups]}
+              </h3>
+            )}
+            <div className="space-y-1">
+              {items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeItem === item.id;
+                
+                return (
+                  <Button
+                    key={item.id}
+                    variant={isActive ? "default" : "ghost"}
+                    className={cn(
+                      "w-full justify-start text-left",
+                      collapsed ? "px-2" : "px-3",
+                      isActive && "bg-blue-600 text-white hover:bg-blue-700"
+                    )}
+                    onClick={() => handleItemClick(item.id)}
+                  >
+                    <Icon className={cn("w-5 h-5", collapsed ? "" : "mr-3")} />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* User info */}
