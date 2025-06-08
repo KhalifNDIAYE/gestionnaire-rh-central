@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Mail, Building } from 'lucide-react';
 import { UserWithUnit } from '../../services/userService';
 
@@ -46,9 +47,12 @@ const EmployeeCard = ({ employee, onClick }: EmployeeCardProps) => {
     >
       <CardContent className="p-4">
         <div className="flex items-center space-x-3 mb-3">
-          <div className="bg-blue-100 p-2 rounded-full">
-            <User className="h-6 w-6 text-blue-600" />
-          </div>
+          <Avatar className="w-12 h-12">
+            <AvatarImage src={employee.photoUrl} alt={employee.name} />
+            <AvatarFallback className="bg-blue-100">
+              <User className="h-6 w-6 text-blue-600" />
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate">{employee.name}</h3>
             <Badge className={`text-xs ${getRoleBadgeColor(employee.role)}`}>

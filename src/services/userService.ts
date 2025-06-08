@@ -1,3 +1,4 @@
+
 import { User } from '../contexts/AuthContext';
 import { apiService } from './apiService';
 import { API_ENDPOINTS } from '../config/api';
@@ -14,6 +15,7 @@ export interface UserProfile {
 
 export interface UserWithUnit extends User {
   unit?: OrganizationalUnit;
+  photoUrl?: string;
 }
 
 class UserService {
@@ -31,7 +33,8 @@ class UserService {
         phone: '+33 1 23 45 67 89',
         address: '123 Rue de la Paix, Paris',
         hireDate: '2020-01-15',
-        salary: 5000
+        salary: 5000,
+        photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
       },
       {
         id: '2',
@@ -44,7 +47,8 @@ class UserService {
         phone: '+33 1 23 45 67 90',
         address: '456 Avenue des Champs, Lyon',
         hireDate: '2021-03-10',
-        salary: 4000
+        salary: 4000,
+        photoUrl: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=150&h=150&fit=crop&crop=face'
       },
       {
         id: '3',
@@ -57,7 +61,8 @@ class UserService {
         phone: '+33 1 23 45 67 91',
         address: '789 Boulevard Saint-Michel, Marseille',
         hireDate: '2019-09-20',
-        salary: 3500
+        salary: 3500,
+        photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
       },
       {
         id: '4',
@@ -70,7 +75,8 @@ class UserService {
         phone: '+33 1 23 45 67 92',
         address: '321 Rue de Rivoli, Toulouse',
         hireDate: '2022-05-15',
-        salary: 2800
+        salary: 2800,
+        photoUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
       },
       {
         id: '5',
@@ -83,7 +89,8 @@ class UserService {
         phone: '+33 1 23 45 67 93',
         address: '654 Rue du Commerce, Nice',
         hireDate: '2023-01-10',
-        salary: 2500
+        salary: 2500,
+        photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
       }
     ];
   }

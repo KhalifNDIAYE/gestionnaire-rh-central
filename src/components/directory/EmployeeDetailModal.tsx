@@ -3,6 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Mail, Phone, Building, Calendar, Euro } from 'lucide-react';
 import { UserWithUnit } from '../../services/userService';
 
@@ -63,10 +64,13 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <User className="h-8 w-8 text-blue-600" />
-            </div>
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-16 h-16">
+              <AvatarImage src={employee.photoUrl} alt={employee.name} />
+              <AvatarFallback className="bg-blue-100 text-2xl">
+                <User className="h-8 w-8 text-blue-600" />
+              </AvatarFallback>
+            </Avatar>
             <div>
               <DialogTitle className="text-xl">{employee.name}</DialogTitle>
               <Badge className={`mt-1 ${getRoleBadgeColor(employee.role)}`}>
