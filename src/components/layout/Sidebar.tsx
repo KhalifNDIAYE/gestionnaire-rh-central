@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import {
   Users,
@@ -12,6 +13,8 @@ import {
   Home,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   User,
   Building,
   Clock,
@@ -67,6 +70,12 @@ interface SidebarProps {
 
 const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    principal: true,
+    rh: true,
+    finance: true,
+    parametrages: true
+  });
   const { user } = useAuth();
 
   const filteredMenuItems = menuItems.filter(item => 
@@ -85,6 +94,13 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
   const handleItemClick = (itemId: string) => {
     console.log(`Navigation vers: ${itemId}`);
     onItemClick?.(itemId);
+  };
+
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionKey]: !prev[sectionKey]
+    }));
   };
 
   return (
@@ -113,15 +129,29 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {Object.entries(groupedItems).map(([groupKey, items]) => (
-          <div key={groupKey} className="space-y-2">
+          <Collapsible
+            key={groupKey}
+            open={expandedSections[groupKey]}
+            onOpenChange={() => toggleSection(groupKey)}
+          >
             {!collapsed && (
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-3">
-                {menuGroups[groupKey as keyof typeof menuGroups]}
-              </h3>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between p-2 h-auto font-semibold text-xs text-gray-500 uppercase tracking-wider hover:bg-gray-50"
+                >
+                  <span>{menuGroups[groupKey as keyof typeof menuGroups]}</span>
+                  {expandedSections[groupKey] ? 
+                    <ChevronUp className="w-3 h-3" /> : 
+                    <ChevronDown className="w-3 h-3" />
+                  }
+                </Button>
+              </CollapsibleTrigger>
             )}
-            <div className="space-y-1">
+            
+            <CollapsibleContent className="space-y-1 mt-2">
               {items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeItem === item.id;
@@ -132,7 +162,7 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
                     variant={isActive ? "default" : "ghost"}
                     className={cn(
                       "w-full justify-start text-left",
-                      collapsed ? "px-2" : "px-3",
+                      collapsed ? "px-2" : "px-3 ml-2",
                       isActive && "bg-blue-600 text-white hover:bg-blue-700"
                     )}
                     onClick={() => handleItemClick(item.id)}
@@ -142,8 +172,8 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
                   </Button>
                 );
               })}
-            </div>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         ))}
       </nav>
 
