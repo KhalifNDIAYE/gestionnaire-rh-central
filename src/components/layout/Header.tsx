@@ -32,7 +32,7 @@ const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
   const currentPage = pageMapping[activeItem];
 
   const getBreadcrumb = () => {
-    const breadcrumbItems = [{ title: 'Partagés avec moi', isLink: false }];
+    const breadcrumbItems = [];
     
     if (currentPage?.category) {
       breadcrumbItems.push({ title: currentPage.category, isLink: false });
