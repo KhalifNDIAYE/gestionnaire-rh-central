@@ -3,21 +3,67 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Bell, LogOut, User, Settings } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Bell, LogOut, User, Settings, ChevronRight } from 'lucide-react';
 
-const Header = () => {
+interface HeaderProps {
+  activeItem?: string;
+}
+
+// Mapping des pages pour le breadcrumb
+const pageMapping: Record<string, { title: string; category?: string }> = {
+  'dashboard': { title: 'Tableau de bord' },
+  'directory': { title: 'Annuaire' },
+  'memorandum': { title: 'Mémorandums' },
+  'profile': { title: 'Mon profil' },
+  'employees': { title: 'Gestion des agents', category: 'Gestion RH' },
+  'functions': { title: 'Gestion des fonctions', category: 'Gestion RH' },
+  'leave-requests': { title: 'Demandes de congés', category: 'Gestion RH' },
+  'organigramme': { title: 'Organigramme', category: 'Gestion RH' },
+  'time-tracking': { title: 'Pointage', category: 'Gestion RH' },
+  'payroll': { title: 'Bulletins de salaire', category: 'Gestion Financière' },
+  'salary': { title: 'Calcul des salaires', category: 'Gestion Financière' },
+  'projects': { title: 'Gestion des projets', category: 'Gestion Financière' },
+  'settings': { title: 'Paramètres', category: 'Paramétrages' },
+};
+
+const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
   const { user, logout } = useAuth();
+  const currentPage = pageMapping[activeItem];
+
+  const getBreadcrumb = () => {
+    const breadcrumbItems = [{ title: 'Partagés avec moi', isLink: false }];
+    
+    if (currentPage?.category) {
+      breadcrumbItems.push({ title: currentPage.category, isLink: false });
+    }
+    
+    breadcrumbItems.push({ title: currentPage?.title || 'Page', isLink: false });
+    
+    return breadcrumbItems;
+  };
+
+  const breadcrumbItems = getBreadcrumb();
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-6 py-3">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Tableau de bord
-          </h1>
-          <p className="text-sm text-gray-600">
-            Bienvenue, {user?.name}
-          </p>
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center space-x-2 text-sm">
+          {breadcrumbItems.map((item, index) => (
+            <div key={index} className="flex items-center">
+              {index > 0 && <ChevronRight className="w-4 h-4 text-gray-400 mx-2" />}
+              <span 
+                className={cn(
+                  index === breadcrumbItems.length - 1 
+                    ? "text-gray-900 font-medium" 
+                    : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                {item.title}
+              </span>
+            </div>
+          ))}
         </div>
 
         <div className="flex items-center space-x-4">
