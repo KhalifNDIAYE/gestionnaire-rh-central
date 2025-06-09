@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiService } from '../services/apiService';
+import { API_ENDPOINTS } from '../config/api';
 
 export interface User {
   id: string;
@@ -13,6 +15,7 @@ export interface User {
   hireDate: string;
   salary?: number;
   photoUrl?: string;
+  token?: string;
 }
 
 interface AuthContextType {
