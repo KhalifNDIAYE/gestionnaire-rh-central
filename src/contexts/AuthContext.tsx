@@ -1,7 +1,4 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
-import { API_ENDPOINTS } from '../config/api';
 
 export interface User {
   id: string;
@@ -13,9 +10,9 @@ export interface User {
   unitName?: string;
   phone?: string;
   address?: string;
-  hireDate?: string;
+  hireDate: string;
   salary?: number;
-  token?: string; // Token JWT pour l'authentification
+  photoUrl?: string;
 }
 
 interface AuthContextType {
