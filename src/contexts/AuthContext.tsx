@@ -16,13 +16,19 @@ export interface User {
   salary?: number;
   photoUrl?: string;
   token?: string;
+  mfaSecret?: string;
+  mfaEnabled?: boolean;
+  backupCodes?: string[];
+  mfaLastUsed?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, mfaToken?: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => Promise<void>;
+  enableMFA: (secret: string) => Promise<void>;
+  disableMFA: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,7 +46,8 @@ const mockUsers: User[] = [
     phone: '+33 1 23 45 67 89',
     address: '123 Rue de la Paix, Paris',
     hireDate: '2020-01-15',
-    salary: 5000
+    salary: 5000,
+    mfaEnabled: false
   },
   {
     id: '2',
@@ -53,7 +60,8 @@ const mockUsers: User[] = [
     phone: '+33 1 23 45 67 90',
     address: '456 Avenue des Champs, Lyon',
     hireDate: '2021-03-10',
-    salary: 4000
+    salary: 4000,
+    mfaEnabled: false
   },
   {
     id: '3',
@@ -66,7 +74,8 @@ const mockUsers: User[] = [
     phone: '+33 1 23 45 67 91',
     address: '789 Boulevard Saint-Michel, Marseille',
     hireDate: '2019-09-20',
-    salary: 3500
+    salary: 3500,
+    mfaEnabled: false
   },
   {
     id: '4',
@@ -79,7 +88,8 @@ const mockUsers: User[] = [
     phone: '+33 1 23 45 67 92',
     address: '321 Rue de Rivoli, Toulouse',
     hireDate: '2022-05-15',
-    salary: 2800
+    salary: 2800,
+    mfaEnabled: false
   }
 ];
 
@@ -93,12 +103,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, mfaToken?: string): Promise<boolean> => {
     try {
       // Tentative de connexion via l'API
       const response = await apiService.post<{ user: User; token: string }>(
         API_ENDPOINTS.login, 
-        { email, password }
+        { email, password, mfaToken }
       );
       
       const userWithToken = { ...response.user, token: response.token };
@@ -154,8 +164,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const enableMFA = async (secret: string): Promise<void> => {
+    if (user) {
+      const updates = {
+        mfaSecret: secret,
+        mfaEnabled: true,
+        mfaLastUsed: new Date().toISOString()
+      };
+      await updateProfile(updates);
+    }
+  };
+
+  const disableMFA = async (): Promise<void> => {
+    if (user) {
+      const updates = {
+        mfaSecret: undefined,
+        mfaEnabled: false,
+        backupCodes: undefined,
+        mfaLastUsed: undefined
+      };
+      await updateProfile(updates);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, logout, updateProfile, enableMFA, disableMFA }}>
       {children}
     </AuthContext.Provider>
   );
