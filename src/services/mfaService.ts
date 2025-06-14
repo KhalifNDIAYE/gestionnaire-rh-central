@@ -18,7 +18,9 @@ class MFAService {
   private readonly issuer = 'RH Management';
 
   generateSecret(): string {
-    return OTPAuth.Secret.generate().base32;
+    // Generate a random secret using the correct OTPAuth API
+    const secret = new OTPAuth.Secret();
+    return secret.base32;
   }
 
   async setupMFA(userEmail: string, userName: string): Promise<MFASetup> {
