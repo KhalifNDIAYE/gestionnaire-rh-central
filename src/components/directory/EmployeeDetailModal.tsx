@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, Mail, Phone, Building, Calendar, Euro } from 'lucide-react';
+import { User, Mail, Phone, Building, Calendar, Euro, Headphones, MapPin } from 'lucide-react';
 import { UserWithUnit } from '../../services/userService';
 
 interface EmployeeDetailModalProps {
@@ -97,6 +96,43 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                 </div>
               </div>
               
+              {employee.professionalEmail && (
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <div className="text-sm text-gray-500">Email professionnel</div>
+                    <div className="font-medium">
+                      <a 
+                        href={`mailto:${employee.professionalEmail}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {employee.professionalEmail}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {employee.voipNumber && (
+                <div className="flex items-center space-x-3">
+                  <Headphones className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <div className="text-sm text-gray-500">Numéro VOIP</div>
+                    <div className="font-medium">{employee.voipNumber}</div>
+                  </div>
+                </div>
+              )}
+
+              {employee.professionalAddress && (
+                <div className="flex items-start space-x-3">
+                  <MapPin className="h-4 w-4 text-gray-400 mt-1" />
+                  <div>
+                    <div className="text-sm text-gray-500">Adresse professionnelle</div>
+                    <div className="font-medium">{employee.professionalAddress}</div>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex items-center space-x-3">
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <div>
@@ -119,16 +155,16 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
 
           <Separator />
 
-          {/* Informations de contact */}
+          {/* Informations de contact personnelles */}
           <div>
             <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide mb-3">
-              Contact
+              Contact personnel
             </h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-gray-400" />
                 <div>
-                  <div className="text-sm text-gray-500">Email</div>
+                  <div className="text-sm text-gray-500">Email personnel</div>
                   <div className="font-medium">
                     <a 
                       href={`mailto:${employee.email}`}
@@ -144,7 +180,7 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                 <div className="flex items-center space-x-3">
                   <Phone className="h-4 w-4 text-gray-400" />
                   <div>
-                    <div className="text-sm text-gray-500">Téléphone</div>
+                    <div className="text-sm text-gray-500">Téléphone personnel</div>
                     <div className="font-medium">
                       <a 
                         href={`tel:${employee.phone}`}
@@ -161,7 +197,7 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                 <div className="flex items-start space-x-3">
                   <Building className="h-4 w-4 text-gray-400 mt-1" />
                   <div>
-                    <div className="text-sm text-gray-500">Adresse</div>
+                    <div className="text-sm text-gray-500">Adresse personnelle</div>
                     <div className="font-medium">{employee.address}</div>
                   </div>
                 </div>
