@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface User {
@@ -17,13 +18,18 @@ export interface User {
   voipNumber?: string;
   professionalEmail?: string;
   professionalAddress?: string;
+  // MFA properties
+  mfaEnabled?: boolean;
+  mfaSecret?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, mfaCode?: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (profile: Partial<User>) => Promise<void>;
+  enableMFA: (secret: string) => Promise<void>;
+  disableMFA: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,7 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, mfaCode?: string): Promise<boolean> => {
     // Simulation d'une authentification
     if (email === 'admin@cse.sn' && password === 'admin') {
       const adminUser: User = {
@@ -52,7 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         voipNumber: '2001',
         professionalEmail: 'cheikh.mbow@cse.sn',
-        professionalAddress: 'Dakar, Sénégal'
+        professionalAddress: 'Dakar, Sénégal',
+        mfaEnabled: false
       };
       setUser(adminUser);
       localStorage.setItem('user', JSON.stringify(adminUser));
@@ -74,8 +81,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const enableMFA = async (secret: string) => {
+    if (user) {
+      const updatedUser = { ...user, mfaEnabled: true, mfaSecret: secret };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
+  const disableMFA = async () => {
+    if (user) {
+      const updatedUser = { ...user, mfaEnabled: false, mfaSecret: undefined };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, logout, updateProfile, enableMFA, disableMFA }}>
       {children}
     </AuthContext.Provider>
   );
