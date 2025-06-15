@@ -105,22 +105,20 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                 </div>
               )}
 
-              {employee.professionalEmail && (
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <div className="text-sm text-gray-500">Email professionnel</div>
-                    <div className="font-medium">
-                      <a 
-                        href={`mailto:${employee.professionalEmail}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        {employee.professionalEmail}
-                      </a>
-                    </div>
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-gray-400" />
+                <div>
+                  <div className="text-sm text-gray-500">Email professionnel</div>
+                  <div className="font-medium">
+                    <a 
+                      href={`mailto:${employee.professionalEmail || employee.email}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {employee.professionalEmail || employee.email}
+                    </a>
                   </div>
                 </div>
-              )}
+              </div>
 
               {employee.voipNumber && (
                 <div className="flex items-center space-x-3">
