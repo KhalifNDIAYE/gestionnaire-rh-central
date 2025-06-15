@@ -24,7 +24,7 @@ class UserService {
       {
         id: '1',
         name: 'Cheikh MBOW',
-        email: 'cheikh.mbow@company.com',
+        email: 'cheikh.mbow@cse.sn',
         role: 'admin',
         fonction: 'Directeur Général',
         unitId: '2',
@@ -38,7 +38,7 @@ class UserService {
       {
         id: '2',
         name: 'Marème DIALLO',
-        email: 'mareme.diallo@company.com',
+        email: 'mareme.diallo@cse.sn',
         role: 'gestionnaire',
         fonction: 'Directrice Technique',
         unitId: '3',
@@ -52,7 +52,7 @@ class UserService {
       {
         id: '3',
         name: 'Lamine NDIAYE',
-        email: 'lamine.ndiaye@company.com',
+        email: 'lamine.ndiaye@cse.sn',
         role: 'gestionnaire',
         fonction: 'Conseiller',
         unitId: '4',
@@ -66,7 +66,7 @@ class UserService {
       {
         id: '4',
         name: 'Amadou SALL',
-        email: 'amadou.sall@company.com',
+        email: 'amadou.sall@cse.sn',
         role: 'gestionnaire',
         fonction: 'Conseiller',
         unitId: '4',
@@ -80,7 +80,7 @@ class UserService {
       {
         id: '5',
         name: 'Moussa DIAW',
-        email: 'moussa.diaw@company.com',
+        email: 'moussa.diaw@cse.sn',
         role: 'gestionnaire',
         fonction: 'Directeur Administratif et Financier',
         unitId: '5',
@@ -94,7 +94,7 @@ class UserService {
       {
         id: '6',
         name: 'Abissatou SADJI',
-        email: 'abissatou.sadji@company.com',
+        email: 'abissatou.sadji@cse.sn',
         role: 'rh',
         fonction: 'Responsable Ressources Humaines',
         unitId: '5',
@@ -108,7 +108,7 @@ class UserService {
       {
         id: '7',
         name: 'Abdoul Aziz DIOUF',
-        email: 'abdoulaziz.diouf@company.com',
+        email: 'abdoulaziz.diouf@cse.sn',
         role: 'agent',
         fonction: 'Responsable VERF',
         unitId: '6',
@@ -122,7 +122,7 @@ class UserService {
       {
         id: '8',
         name: 'Adja Aissatou SY',
-        email: 'adja.sy@company.com',
+        email: 'adja.sy@cse.sn',
         role: 'agent',
         fonction: 'Responsable Biodiversité',
         unitId: '7',
@@ -136,7 +136,7 @@ class UserService {
       {
         id: '9',
         name: 'Mariéme Soda DIALLO',
-        email: 'marieme.diallo@company.com',
+        email: 'marieme.diallo@cse.sn',
         role: 'agent',
         fonction: 'Responsable Évaluation Environnementale',
         unitId: '8',
@@ -150,7 +150,7 @@ class UserService {
       {
         id: '10',
         name: 'Mamadou Lamine NDIAYE',
-        email: 'mamadou.ndiaye@company.com',
+        email: 'mamadou.ndiaye@cse.sn',
         role: 'agent',
         fonction: 'Responsable Océan-Littoral',
         unitId: '12',
@@ -164,7 +164,7 @@ class UserService {
       {
         id: '11',
         name: 'Dieynaba SECK',
-        email: 'dieynaba.seck@company.com',
+        email: 'dieynaba.seck@cse.sn',
         role: 'agent',
         fonction: 'Responsable Sécurité Alimentaire',
         unitId: '13',
@@ -178,7 +178,7 @@ class UserService {
       {
         id: '12',
         name: 'Aissata Boubou SALL',
-        email: 'aissata.sall@company.com',
+        email: 'aissata.sall@cse.sn',
         role: 'agent',
         fonction: 'Responsable Finances Climatiques',
         unitId: '14',
@@ -192,7 +192,7 @@ class UserService {
       {
         id: '13',
         name: 'Thioro Codou NIANG',
-        email: 'thioro.niang@company.com',
+        email: 'thioro.niang@cse.sn',
         role: 'agent',
         fonction: 'Responsable Communication',
         unitId: '9',
@@ -206,7 +206,7 @@ class UserService {
       {
         id: '14',
         name: 'Ibrahima Mamadou NDIAYE',
-        email: 'ibrahima.ndiaye@company.com',
+        email: 'ibrahima.ndiaye@cse.sn',
         role: 'agent',
         fonction: 'Responsable Informatique',
         unitId: '10',
@@ -220,7 +220,7 @@ class UserService {
       {
         id: '15',
         name: 'Mouhamed LY',
-        email: 'mouhamed.ly@company.com',
+        email: 'mouhamed.ly@cse.sn',
         role: 'agent',
         fonction: 'Chargé Mobilisation Ressources',
         unitId: '11',
@@ -234,7 +234,7 @@ class UserService {
       {
         id: '16',
         name: 'Fatou Binetou TRAORE',
-        email: 'fatou.traore@company.com',
+        email: 'fatou.traore@cse.sn',
         role: 'agent',
         fonction: 'Responsable Suivi Evaluation',
         unitId: '15',

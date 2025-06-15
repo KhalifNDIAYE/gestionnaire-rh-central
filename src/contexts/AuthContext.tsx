@@ -38,7 +38,7 @@ const mockUsers: User[] = [
   {
     id: '1',
     name: 'Admin Système',
-    email: 'admin@company.com',
+    email: 'admin@cse.sn',
     role: 'admin',
     fonction: 'Administrateur Système',
     unitId: '2',
@@ -52,7 +52,7 @@ const mockUsers: User[] = [
   {
     id: '2',
     name: 'Marie Dubois',
-    email: 'marie.dubois@company.com',
+    email: 'marie.dubois@cse.sn',
     role: 'rh',
     fonction: 'Responsable RH',
     unitId: '5',
@@ -66,7 +66,7 @@ const mockUsers: User[] = [
   {
     id: '3',
     name: 'Pierre Martin',
-    email: 'pierre.martin@company.com',
+    email: 'pierre.martin@cse.sn',
     role: 'gestionnaire',
     fonction: 'Chef de Projet',
     unitId: '6',
@@ -80,7 +80,7 @@ const mockUsers: User[] = [
   {
     id: '4',
     name: 'Sophie Leroy',
-    email: 'sophie.leroy@company.com',
+    email: 'sophie.leroy@cse.sn',
     role: 'agent',
     fonction: 'Analyste',
     unitId: '7',

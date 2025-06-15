@@ -99,7 +99,7 @@ const EmployeeEditModal = ({
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="jean.dupont@company.com" 
+                      placeholder="jean.dupont@cse.sn" 
                       {...field} 
                       disabled={!isOwnProfile && !canModifyAll}
                     />
