@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { User, Mail, Phone, Building, Calendar, Euro, Headphones, MapPin } from 'lucide-react';
+import { User, Mail, Phone, Building, Calendar, Headphones, MapPin } from 'lucide-react';
 import { UserWithUnit } from '../../services/userService';
 
 interface EmployeeDetailModalProps {
@@ -50,14 +50,6 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
       month: 'long',
       day: 'numeric'
     });
-  };
-
-  const formatSalary = (salary: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0
-    }).format(salary);
   };
 
   return (
@@ -120,15 +112,13 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                 </div>
               </div>
 
-              {employee.voipNumber && (
-                <div className="flex items-center space-x-3">
-                  <Headphones className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <div className="text-sm text-gray-500">Numéro VOIP</div>
-                    <div className="font-medium">{employee.voipNumber}</div>
-                  </div>
+              <div className="flex items-center space-x-3">
+                <Headphones className="h-4 w-4 text-gray-400" />
+                <div>
+                  <div className="text-sm text-gray-500">Numéro VOIP</div>
+                  <div className="font-medium">{employee.voipNumber || 'Non renseigné'}</div>
                 </div>
-              )}
+              </div>
 
               <div className="flex items-center space-x-3">
                 <Calendar className="h-4 w-4 text-gray-400" />
@@ -137,16 +127,6 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                   <div className="font-medium">{formatDate(employee.hireDate)}</div>
                 </div>
               </div>
-
-              {employee.salary && (
-                <div className="flex items-center space-x-3">
-                  <Euro className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <div className="text-sm text-gray-500">Salaire annuel</div>
-                    <div className="font-medium">{formatSalary(employee.salary)}</div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {employee.professionalAddress && (
