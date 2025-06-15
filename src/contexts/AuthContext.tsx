@@ -1,6 +1,3 @@
-
-
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface User {
@@ -44,7 +41,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string, mfaCode?: string): Promise<boolean> => {
     // Simulation d'une authentification
-    if ((email === 'admin@cse.sn' || email === 'admin@company.com') && password === 'admin') {
+    
+    // Compte Admin avec mot de passe "password"
+    if (email === 'admin@company.com' && password === 'password') {
       const adminUser: User = {
         id: '1',
         name: 'Cheikh MBOW',
@@ -68,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return true;
     }
     
-    // Autres comptes de démonstration
+    // Autres comptes de démonstration avec mot de passe "password"
     if (password === 'password') {
       let demoUser: User | null = null;
       
@@ -188,5 +187,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
-
