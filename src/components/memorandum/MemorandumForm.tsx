@@ -88,6 +88,16 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
     e.preventDefault();
     if (!user) return;
 
+    // Validation des codes budgétaires
+    if (!formData.projectCode || !formData.componentCode || !formData.activityCode) {
+      toast({
+        title: 'Champs requis',
+        description: 'Tous les codes budgétaires sont obligatoires.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       await memorandumService.createMemorandum({
@@ -144,12 +154,10 @@ ${destinataire},
 
 ${formData.content}
 
-${formData.projectCode || formData.componentCode || formData.activityCode ? `
 Cette activité sera imputée sur l'Unité de Coordination et de Gestion (UCG) dont les codes sont ci-dessous énumérés :
-${formData.projectCode ? `Code projet\t${formData.projectCode}` : ''}
-${formData.componentCode ? `Code composante\t${formData.componentCode}` : ''}
-${formData.activityCode ? `Code activité ou ligne budgétaire\t${formData.activityCode}` : ''}
-` : ''}
+Code projet\t${formData.projectCode}
+Code composante\t${formData.componentCode}
+Code activité ou ligne budgétaire\t${formData.activityCode}
 
 En espérant qu'une suite favorable sera réservée à ma demande, je vous prie d'agréer ${destinataire} l'assurance de mes sincères salutations.
 
@@ -228,35 +236,38 @@ Motif :\t\t\tMotif :\t\t\tMotif :`;
             />
           </div>
 
-          {/* Codes budgétaires (optionnel) */}
-          <div className="bg-blue-50 p-4 rounded-lg space-y-4">
-            <h3 className="font-semibold">Codes budgétaires (optionnel)</h3>
+          {/* Codes budgétaires (obligatoire) */}
+          <div className="bg-red-50 border border-red-200 p-4 rounded-lg space-y-4">
+            <h3 className="font-semibold text-red-800">Codes budgétaires (obligatoire)</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="projectCode">Code projet</Label>
+                <Label htmlFor="projectCode">Code projet *</Label>
                 <Input
                   id="projectCode"
                   value={formData.projectCode}
                   onChange={(e) => setFormData(prev => ({ ...prev, projectCode: e.target.value }))}
                   placeholder="Ex: 050"
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="componentCode">Code composante</Label>
+                <Label htmlFor="componentCode">Code composante *</Label>
                 <Input
                   id="componentCode"
                   value={formData.componentCode}
                   onChange={(e) => setFormData(prev => ({ ...prev, componentCode: e.target.value }))}
                   placeholder="Ex: 05009"
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="activityCode">Code activité</Label>
+                <Label htmlFor="activityCode">Code activité *</Label>
                 <Input
                   id="activityCode"
                   value={formData.activityCode}
                   onChange={(e) => setFormData(prev => ({ ...prev, activityCode: e.target.value }))}
                   placeholder="Ex: 050090101"
+                  required
                 />
               </div>
             </div>
