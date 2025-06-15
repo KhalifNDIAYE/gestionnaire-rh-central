@@ -46,7 +46,7 @@ const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
   const breadcrumbItems = getBreadcrumb();
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3">
+    <header className="bg-white border-b border-gray-200 px-6 py-3 sticky top-0 z-40">
       <div className="flex items-center justify-between">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center space-x-2 text-sm">

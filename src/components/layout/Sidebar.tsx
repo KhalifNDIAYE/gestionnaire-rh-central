@@ -105,7 +105,7 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
 
   return (
     <div className={cn(
-      "bg-white border-r border-gray-200 transition-all duration-300 flex flex-col",
+      "bg-white border-r border-gray-200 transition-all duration-300 flex flex-col sticky top-0 h-screen z-30",
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Header */}

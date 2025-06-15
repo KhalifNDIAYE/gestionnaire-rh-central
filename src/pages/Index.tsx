@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
@@ -73,7 +74,7 @@ const AppContent = () => {
       <Sidebar activeItem={currentPage} onItemClick={setCurrentPage} />
       <div className="flex-1 flex flex-col">
         <Header activeItem={currentPage} />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-y-auto">
           {renderCurrentPage()}
         </main>
       </div>
