@@ -109,7 +109,7 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Header - aligné avec la hauteur du header principal */}
-      <div className="px-6 py-3 border-b border-gray-200 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between h-16">
         {!collapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
