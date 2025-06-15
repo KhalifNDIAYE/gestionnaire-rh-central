@@ -91,9 +91,9 @@ const MemorandumList = ({ showValidationActions = false, validationLevel = 1, re
   const getStatusBadge = (status: Memorandum['status']) => {
     const statusConfig = {
       draft: { label: 'Brouillon', variant: 'secondary' as const },
-      level1_pending: { label: 'En attente niveau 1', variant: 'default' as const },
-      level2_pending: { label: 'En attente niveau 2', variant: 'default' as const },
-      level3_pending: { label: 'En attente niveau 3', variant: 'default' as const },
+      level1_pending: { label: 'En attente Visa DAF', variant: 'default' as const },
+      level2_pending: { label: 'En attente Visa DT', variant: 'default' as const },
+      level3_pending: { label: 'En attente Approbation DG', variant: 'default' as const },
       approved: { label: 'Approuvé', variant: 'default' as const },
       rejected: { label: 'Rejeté', variant: 'destructive' as const },
     };
@@ -111,6 +111,15 @@ const MemorandumList = ({ showValidationActions = false, validationLevel = 1, re
 
     const config = priorityConfig[priority];
     return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getValidationLevelLabel = (level: 1 | 2 | 3) => {
+    const levelLabels = {
+      1: 'Visa DAF',
+      2: 'Visa DT',
+      3: 'Approbation DG'
+    };
+    return levelLabels[level];
   };
 
   if (loading) {
@@ -163,9 +172,6 @@ const MemorandumList = ({ showValidationActions = false, validationLevel = 1, re
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 text-sm text-gray-600">
                     <span>Catégorie: {memorandum.category}</span>
-                    {memorandum.expirationDate && (
-                      <span>Expire le: {new Date(memorandum.expirationDate).toLocaleDateString('fr-FR')}</span>
-                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -187,7 +193,7 @@ const MemorandumList = ({ showValidationActions = false, validationLevel = 1, re
                         <div className="space-y-4">
                           <div>
                             <h4 className="font-medium mb-2">Contenu</h4>
-                            <p className="text-gray-700">{selectedMemorandum?.content}</p>
+                            <p className="text-gray-700 whitespace-pre-line">{selectedMemorandum?.content}</p>
                           </div>
                           
                           {selectedMemorandum?.validationHistory.length > 0 && (
@@ -198,7 +204,7 @@ const MemorandumList = ({ showValidationActions = false, validationLevel = 1, re
                                   <div key={index} className="p-3 bg-gray-50 rounded-lg">
                                     <div className="flex items-center justify-between mb-1">
                                       <span className="font-medium">
-                                        Niveau {step.level} - {step.validatorName} ({step.validatorRole})
+                                        {getValidationLevelLabel(step.level)} - {step.validatorName} ({step.validatorRole})
                                       </span>
                                       <Badge variant={step.action === 'approved' ? 'default' : 'destructive'}>
                                         {step.action === 'approved' ? 'Approuvé' : 'Rejeté'}

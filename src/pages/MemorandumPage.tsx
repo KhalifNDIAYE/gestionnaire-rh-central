@@ -45,19 +45,19 @@ const MemorandumPage = () => {
           {canValidateLevel(1) && (
             <TabsTrigger value="level1">
               <Clock className="w-4 h-4 mr-1" />
-              Niveau 1
+              Visa DAF
             </TabsTrigger>
           )}
           {canValidateLevel(2) && (
             <TabsTrigger value="level2">
               <Clock className="w-4 h-4 mr-1" />
-              Niveau 2
+              Visa DT
             </TabsTrigger>
           )}
           {canValidateLevel(3) && (
             <TabsTrigger value="level3">
               <Clock className="w-4 h-4 mr-1" />
-              Niveau 3
+              Approbation DG
             </TabsTrigger>
           )}
           <TabsTrigger value="approved">
@@ -85,9 +85,9 @@ const MemorandumPage = () => {
           <TabsContent value="level1" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Validation Niveau 1 - En attente</CardTitle>
+                <CardTitle>Visa DAF - En attente</CardTitle>
                 <p className="text-sm text-gray-600">
-                  Mémorandums en attente de validation par les superviseurs
+                  Mémorandums en attente de visa par le Directeur Administratif et Financier
                 </p>
               </CardHeader>
               <CardContent>
@@ -105,9 +105,9 @@ const MemorandumPage = () => {
           <TabsContent value="level2" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Validation Niveau 2 - En attente</CardTitle>
+                <CardTitle>Visa DT - En attente</CardTitle>
                 <p className="text-sm text-gray-600">
-                  Mémorandums en attente de validation par les managers
+                  Mémorandums en attente de visa par la Directrice Technique
                 </p>
               </CardHeader>
               <CardContent>
@@ -125,9 +125,9 @@ const MemorandumPage = () => {
           <TabsContent value="level3" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Validation Niveau 3 - En attente</CardTitle>
+                <CardTitle>Approbation DG - En attente</CardTitle>
                 <p className="text-sm text-gray-600">
-                  Mémorandums en attente de validation par la direction
+                  Mémorandums en attente d'approbation par le Directeur Général
                 </p>
               </CardHeader>
               <CardContent>
