@@ -29,11 +29,16 @@ interface MemorandumEditModalProps {
 
 const MemorandumEditModal = ({ memorandum, isOpen, onClose, onSuccess }: MemorandumEditModalProps) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    content: string;
+    category: 'information' | 'directive' | 'rappel' | 'urgent';
+    priority: 'low' | 'medium' | 'high';
+  }>({
     title: '',
     content: '',
-    category: '',
-    priority: '',
+    category: 'information',
+    priority: 'low',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,7 +78,7 @@ const MemorandumEditModal = ({ memorandum, isOpen, onClose, onSuccess }: Memoran
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
