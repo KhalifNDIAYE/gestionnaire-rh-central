@@ -72,7 +72,7 @@ const MemorandumPage = () => {
               <CardTitle>Tous les mémorandums</CardTitle>
             </CardHeader>
             <CardContent>
-              <MemorandumList refreshTrigger={refreshTrigger} />
+              <MemorandumList refreshTrigger={refreshTrigger} showEditDelete={true} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -147,7 +147,7 @@ const MemorandumPage = () => {
               <CardTitle>Mémorandums approuvés</CardTitle>
             </CardHeader>
             <CardContent>
-              <MemorandumList refreshTrigger={refreshTrigger} />
+              <MemorandumList refreshTrigger={refreshTrigger} showEditDelete={true} />
             </CardContent>
           </Card>
         </TabsContent>

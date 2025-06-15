@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,14 +15,21 @@ import { useToast } from '@/hooks/use-toast';
 import { memorandumService, Memorandum } from '../../services/memorandumService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Check, X, Eye, Clock } from 'lucide-react';
+import MemorandumActions from './MemorandumActions';
 
 interface MemorandumListProps {
   showValidationActions?: boolean;
   validationLevel?: 1 | 2 | 3;
   refreshTrigger?: number;
+  showEditDelete?: boolean;
 }
 
-const MemorandumList = ({ showValidationActions = false, validationLevel = 1, refreshTrigger }: MemorandumListProps) => {
+const MemorandumList = ({ 
+  showValidationActions = false, 
+  validationLevel = 1, 
+  refreshTrigger,
+  showEditDelete = false 
+}: MemorandumListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [memorandums, setMemorandums] = useState<Memorandum[]>([]);
@@ -226,6 +232,12 @@ const MemorandumList = ({ showValidationActions = false, validationLevel = 1, re
                         </div>
                       </DialogContent>
                     </Dialog>
+
+                    <MemorandumActions 
+                      memorandum={memorandum}
+                      onUpdate={loadMemorandums}
+                      showEditDelete={showEditDelete}
+                    />
 
                     {showValidationActions && (
                       <div className="flex items-center space-x-2">
