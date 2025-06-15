@@ -88,6 +88,16 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
     e.preventDefault();
     if (!user) return;
 
+    // Validation du numéro du mémorandum
+    if (!formData.number || formData.number.trim() === '') {
+      toast({
+        title: 'Champ requis',
+        description: 'Le numéro du mémorandum est obligatoire.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Validation des codes budgétaires
     if (!formData.projectCode || !formData.componentCode || !formData.activityCode) {
       toast({
@@ -196,7 +206,7 @@ Motif :\t\t\tMotif :\t\t\tMotif :`;
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="number">Numéro du mémorandum</Label>
+                <Label htmlFor="number">Numéro du mémorandum *</Label>
                 <Input
                   id="number"
                   value={formData.number}
