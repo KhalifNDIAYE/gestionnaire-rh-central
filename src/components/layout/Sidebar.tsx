@@ -108,8 +108,8 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
       "bg-white border-r border-gray-200 transition-all duration-300 flex flex-col sticky top-0 h-screen z-30",
       collapsed ? "w-16" : "w-64"
     )}>
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      {/* Header - aligné avec la hauteur du header principal */}
+      <div className="px-6 py-3 border-b border-gray-200 flex items-center justify-between">
         {!collapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
