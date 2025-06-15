@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +62,7 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center space-x-4">
             <Avatar className="w-16 h-16">
@@ -79,23 +80,31 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
           </div>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Informations professionnelles */}
           <div>
             <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide mb-3">
               Informations professionnelles
             </h3>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3">
                 <Building className="h-4 w-4 text-gray-400" />
                 <div>
+                  <div className="text-sm text-gray-500">Fonction</div>
                   <div className="font-medium">{employee.fonction}</div>
-                  {employee.unit && (
-                    <div className="text-sm text-gray-500">{employee.unit.name}</div>
-                  )}
                 </div>
               </div>
               
+              {employee.unit && (
+                <div className="flex items-center space-x-3">
+                  <Building className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <div className="text-sm text-gray-500">Unité</div>
+                    <div className="font-medium">{employee.unit.name}</div>
+                  </div>
+                </div>
+              )}
+
               {employee.professionalEmail && (
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-gray-400" />
@@ -123,16 +132,6 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                 </div>
               )}
 
-              {employee.professionalAddress && (
-                <div className="flex items-start space-x-3">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-1" />
-                  <div>
-                    <div className="text-sm text-gray-500">Adresse professionnelle</div>
-                    <div className="font-medium">{employee.professionalAddress}</div>
-                  </div>
-                </div>
-              )}
-              
               <div className="flex items-center space-x-3">
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <div>
@@ -151,6 +150,16 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                 </div>
               )}
             </div>
+
+            {employee.professionalAddress && (
+              <div className="flex items-start space-x-3 mt-4">
+                <MapPin className="h-4 w-4 text-gray-400 mt-1" />
+                <div>
+                  <div className="text-sm text-gray-500">Adresse professionnelle</div>
+                  <div className="font-medium">{employee.professionalAddress}</div>
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -160,7 +169,7 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
             <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide mb-3">
               Contact personnel
             </h3>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-gray-400" />
                 <div>
@@ -192,17 +201,17 @@ const EmployeeDetailModal = ({ employee, open, onOpenChange }: EmployeeDetailMod
                   </div>
                 </div>
               )}
-
-              {employee.address && (
-                <div className="flex items-start space-x-3">
-                  <Building className="h-4 w-4 text-gray-400 mt-1" />
-                  <div>
-                    <div className="text-sm text-gray-500">Adresse personnelle</div>
-                    <div className="font-medium">{employee.address}</div>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {employee.address && (
+              <div className="flex items-start space-x-3 mt-4">
+                <Building className="h-4 w-4 text-gray-400 mt-1" />
+                <div>
+                  <div className="text-sm text-gray-500">Adresse personnelle</div>
+                  <div className="font-medium">{employee.address}</div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
