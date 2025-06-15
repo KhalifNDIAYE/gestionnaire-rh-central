@@ -1,3 +1,4 @@
+
 import { User } from '../contexts/AuthContext';
 import { apiService } from './apiService';
 import { API_ENDPOINTS } from '../config/api';
@@ -10,6 +11,7 @@ export interface UserProfile {
   address: string;
   unitId?: string;
   unitName?: string;
+  photoUrl?: string;
 }
 
 export interface UserWithUnit extends User {
@@ -258,7 +260,8 @@ class UserService {
         phone: user.phone || '',
         address: user.address || '',
         unitId: user.unitId,
-        unitName: user.unitName
+        unitName: user.unitName,
+        photoUrl: user.photoUrl
       };
     } catch (error) {
       console.error('Error fetching user profile from API, using fallback:', error);
@@ -275,7 +278,8 @@ class UserService {
         phone: user.phone || '',
         address: user.address || '',
         unitId: user.unitId,
-        unitName: user.unitName
+        unitName: user.unitName,
+        photoUrl: user.photoUrl
       };
     }
   }
