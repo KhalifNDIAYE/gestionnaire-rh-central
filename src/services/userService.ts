@@ -1,4 +1,3 @@
-
 import { User } from '../contexts/AuthContext';
 import { apiService } from './apiService';
 import { API_ENDPOINTS } from '../config/api';
@@ -12,6 +11,11 @@ export interface UserProfile {
   unitId?: string;
   unitName?: string;
   photoUrl?: string;
+  // Nouveaux champs professionnels
+  voipNumber?: string;
+  professionalEmail?: string;
+  professionalAddress?: string;
+  fonction?: string;
 }
 
 export interface UserWithUnit extends User {
@@ -261,7 +265,11 @@ class UserService {
         address: user.address || '',
         unitId: user.unitId,
         unitName: user.unitName,
-        photoUrl: user.photoUrl
+        photoUrl: user.photoUrl,
+        voipNumber: user.voipNumber,
+        professionalEmail: user.professionalEmail,
+        professionalAddress: user.professionalAddress,
+        fonction: user.fonction
       };
     } catch (error) {
       console.error('Error fetching user profile from API, using fallback:', error);
@@ -279,7 +287,11 @@ class UserService {
         address: user.address || '',
         unitId: user.unitId,
         unitName: user.unitName,
-        photoUrl: user.photoUrl
+        photoUrl: user.photoUrl,
+        voipNumber: user.voipNumber,
+        professionalEmail: user.professionalEmail,
+        professionalAddress: user.professionalAddress,
+        fonction: user.fonction
       };
     }
   }

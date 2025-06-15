@@ -24,7 +24,11 @@ const ProfilePage = () => {
     phone: '',
     address: '',
     unitId: '',
-    unitName: ''
+    unitName: '',
+    voipNumber: '',
+    professionalEmail: '',
+    professionalAddress: '',
+    fonction: ''
   });
   const [profileImage, setProfileImage] = useState<string | null>(user?.photoUrl || null);
 
@@ -153,7 +157,7 @@ const ProfilePage = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email personnel</Label>
                   <Input
                     id="email"
                     type="email"
@@ -166,7 +170,7 @@ const ProfilePage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="phone">Téléphone</Label>
+                  <Label htmlFor="phone">Téléphone personnel</Label>
                   <Input
                     id="phone"
                     value={profile.phone}
@@ -174,7 +178,7 @@ const ProfilePage = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="address">Adresse</Label>
+                  <Label htmlFor="address">Adresse personnelle</Label>
                   <Input
                     id="address"
                     value={profile.address}
@@ -187,6 +191,49 @@ const ProfilePage = () => {
 
               <h3 className="text-lg font-semibold mb-4">Informations professionnelles</h3>
               
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fonction">Fonction</Label>
+                  <Input
+                    id="fonction"
+                    value={profile.fonction}
+                    onChange={(e) => setProfile({ ...profile, fonction: e.target.value })}
+                    placeholder="Votre fonction"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="professionalEmail">Email professionnel</Label>
+                  <Input
+                    id="professionalEmail"
+                    type="email"
+                    value={profile.professionalEmail}
+                    onChange={(e) => setProfile({ ...profile, professionalEmail: e.target.value })}
+                    placeholder="nom@entreprise.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="voipNumber">Numéro VOIP</Label>
+                  <Input
+                    id="voipNumber"
+                    value={profile.voipNumber}
+                    onChange={(e) => setProfile({ ...profile, voipNumber: e.target.value })}
+                    placeholder="Extension VOIP"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="professionalAddress">Adresse professionnelle</Label>
+                  <Input
+                    id="professionalAddress"
+                    value={profile.professionalAddress}
+                    onChange={(e) => setProfile({ ...profile, professionalAddress: e.target.value })}
+                    placeholder="Adresse du bureau"
+                  />
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="unitId">Unité organisationnelle</Label>
                 <Select 
