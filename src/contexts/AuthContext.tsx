@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface User {
@@ -111,3 +112,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

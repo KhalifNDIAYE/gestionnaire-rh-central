@@ -15,6 +15,7 @@ import { settingsService, SystemSettings } from '../services/settingsService';
 import AnnouncementManager from '../components/communication/AnnouncementManager';
 import ImageUpload from '../components/ui/image-upload';
 import BrandingPreview from '../components/branding/BrandingPreview';
+import SecuritySettings from '../components/security/SecuritySettings';
 
 // Schéma pour la configuration du branding
 const brandingFormSchema = z.object({
@@ -322,6 +323,7 @@ const SettingsPage = () => {
           <TabsTrigger value="general">Général</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="appearance">Apparence</TabsTrigger>
+          <TabsTrigger value="security">Sécurité</TabsTrigger>
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="communication">Communication</TabsTrigger>
           <TabsTrigger value="advanced">Avancé</TabsTrigger>
@@ -660,6 +662,11 @@ const SettingsPage = () => {
               </Form>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Nouveau: Paramètres de sécurité */}
+        <TabsContent value="security">
+          <SecuritySettings />
         </TabsContent>
 
         {/* Configuration du branding améliorée */}
