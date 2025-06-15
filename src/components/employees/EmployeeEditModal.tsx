@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -7,21 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
-
-interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  fonction: string;
-  department: string;
-  status: 'active' | 'inactive';
-  startDate: string;
-  salary: number;
-  type: 'employee' | 'consultant';
-  endDate?: string;
-  hourlyRate?: number;
-  company?: string;
-}
+import { useToast } from '@/hooks/use-toast';
+import { employeeService, Employee } from '../../services/employeeService';
 
 interface EmployeeEditModalProps {
   employee: Employee | null;
@@ -39,6 +26,7 @@ const EmployeeEditModal = ({
   mockFonctions 
 }: EmployeeEditModalProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const form = useForm();
 
   const isAdmin = user?.role === 'admin';
@@ -46,11 +34,43 @@ const EmployeeEditModal = ({
   const isOwnProfile = user?.id === employee?.id;
   const canModifyAll = isAdmin || isRH;
 
-  const onSubmit = (data: any) => {
-    console.log('Modification employé:', data);
-    onOpenChange(false);
-    onEmployeeUpdated();
-    form.reset();
+  // Pré-remplir le formulaire quand l'employé change
+  useEffect(() => {
+    if (employee) {
+      form.reset({
+        name: employee.name,
+        email: employee.email,
+        fonction: employee.fonction,
+        department: employee.department,
+        status: employee.status,
+        salary: employee.salary,
+        hourlyRate: employee.hourlyRate,
+        company: employee.company,
+        endDate: employee.endDate,
+      });
+    }
+  }, [employee, form]);
+
+  const onSubmit = async (data: any) => {
+    if (!employee) return;
+
+    try {
+      await employeeService.updateEmployee(employee.id, data);
+      toast({
+        title: "Succès",
+        description: isOwnProfile ? "Profil modifié avec succès" : "Employé modifié avec succès",
+      });
+      onOpenChange(false);
+      onEmployeeUpdated();
+      form.reset();
+    } catch (error) {
+      console.error('Erreur lors de la modification:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier les informations",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!employee) return null;
@@ -74,7 +94,6 @@ const EmployeeEditModal = ({
             <FormField
               control={form.control}
               name="name"
-              defaultValue={employee.name}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nom complet</FormLabel>
@@ -93,7 +112,6 @@ const EmployeeEditModal = ({
             <FormField
               control={form.control}
               name="email"
-              defaultValue={employee.email}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
@@ -114,7 +132,6 @@ const EmployeeEditModal = ({
                 <FormField
                   control={form.control}
                   name="fonction"
-                  defaultValue={employee.fonction}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Fonction</FormLabel>
@@ -140,7 +157,6 @@ const EmployeeEditModal = ({
                 <FormField
                   control={form.control}
                   name="department"
-                  defaultValue={employee.department}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Département</FormLabel>
@@ -166,7 +182,6 @@ const EmployeeEditModal = ({
                 <FormField
                   control={form.control}
                   name="status"
-                  defaultValue={employee.status}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Statut</FormLabel>
@@ -190,7 +205,6 @@ const EmployeeEditModal = ({
                   <FormField
                     control={form.control}
                     name="salary"
-                    defaultValue={employee.salary}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Salaire annuel (€)</FormLabel>
@@ -212,7 +226,6 @@ const EmployeeEditModal = ({
                     <FormField
                       control={form.control}
                       name="hourlyRate"
-                      defaultValue={employee.hourlyRate}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Tarif horaire (€)</FormLabel>
@@ -231,7 +244,6 @@ const EmployeeEditModal = ({
                     <FormField
                       control={form.control}
                       name="company"
-                      defaultValue={employee.company}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Société de conseil</FormLabel>
@@ -249,7 +261,6 @@ const EmployeeEditModal = ({
                     <FormField
                       control={form.control}
                       name="endDate"
-                      defaultValue={employee.endDate}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Date de fin de mission</FormLabel>

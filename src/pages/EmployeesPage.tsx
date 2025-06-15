@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,36 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX, Briefcase } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import EmployeeEditModal from '../components/employees/EmployeeEditModal';
-
-interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  fonction: string;
-  department: string;
-  status: 'active' | 'inactive';
-  startDate: string;
-  salary: number;
-  type: 'employee' | 'consultant';
-  endDate?: string;
-  hourlyRate?: number;
-  company?: string;
-}
-
-const mockEmployees: Employee[] = [
-  { id: '1', name: 'Jean Dupont', email: 'jean.dupont@company.com', fonction: 'Développeur Full Stack', department: 'IT', status: 'active', startDate: '2023-01-15', salary: 45000, type: 'employee' },
-  { id: '2', name: 'Marie Martin', email: 'marie.martin@company.com', fonction: 'Analyste Financier', department: 'Finance', status: 'active', startDate: '2022-08-10', salary: 50000, type: 'employee' },
-  { id: '3', name: 'Paul Bernard', email: 'paul.bernard@company.com', fonction: 'Chef de Département RH', department: 'HR', status: 'active', startDate: '2021-03-20', salary: 60000, type: 'employee' },
-  { id: '4', name: 'Sophie Durand', email: 'sophie.durand@company.com', fonction: 'Chargée de Communication', department: 'Marketing', status: 'inactive', startDate: '2020-11-05', salary: 48000, type: 'employee' },
-  { id: 'consultant-1', name: 'Marc Consultant', email: 'marc@consultingfirm.com', fonction: 'Consultant ERP', department: 'IT', status: 'active', startDate: '2024-01-15', salary: 0, type: 'consultant', endDate: '2024-06-30', hourlyRate: 120, company: 'TechConsult SARL' },
-  { id: 'consultant-2', name: 'Julie Expert', email: 'julie@webagency.com', fonction: 'Consultant Web', department: 'Marketing', status: 'active', startDate: '2024-03-01', salary: 0, type: 'consultant', endDate: '2024-05-31', hourlyRate: 95, company: 'WebDesign Pro' },
-];
+import { employeeService, Employee } from '../services/employeeService';
 
 const mockFonctions = [
   'Développeur Full Stack',
@@ -60,13 +39,37 @@ const mockFonctions = [
 
 const EmployeesPage = () => {
   const { user } = useAuth();
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const { toast } = useToast();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('employees');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const form = useForm();
+
+  // Charger les employés au montage du composant
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  const loadEmployees = async () => {
+    try {
+      setLoading(true);
+      const data = await employeeService.getAllEmployees();
+      setEmployees(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des employés:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les employés",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,10 +84,24 @@ const EmployeesPage = () => {
     return matchesSearch && matchesType;
   });
 
-  const onSubmit = (data: any) => {
-    console.log('Nouvel employé/consultant:', data);
-    setIsDialogOpen(false);
-    form.reset();
+  const onSubmit = async (data: any) => {
+    try {
+      await employeeService.createEmployee(data);
+      toast({
+        title: "Succès",
+        description: "Employé ajouté avec succès",
+      });
+      setIsDialogOpen(false);
+      form.reset();
+      loadEmployees(); // Recharger la liste
+    } catch (error) {
+      console.error('Erreur lors de la création:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter l'employé",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditEmployee = (employee: Employee) => {
@@ -93,8 +110,29 @@ const EmployeesPage = () => {
   };
 
   const handleEmployeeUpdated = () => {
-    console.log('Employé mis à jour');
-    // Ici on rechargerait les données
+    loadEmployees(); // Recharger la liste après modification
+    toast({
+      title: "Succès",
+      description: "Employé modifié avec succès",
+    });
+  };
+
+  const handleDeleteEmployee = async (employee: Employee) => {
+    try {
+      await employeeService.deleteEmployee(employee.id);
+      toast({
+        title: "Succès",
+        description: "Employé supprimé avec succès",
+      });
+      loadEmployees(); // Recharger la liste
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'employé",
+        variant: "destructive",
+      });
+    }
   };
 
   const canManageEmployees = user?.role === 'admin' || user?.role === 'rh';
@@ -109,6 +147,21 @@ const EmployeesPage = () => {
               Vous n'avez pas les permissions nécessaires pour accéder à cette page.
             </CardDescription>
           </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="flex items-center justify-center h-48">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p>Chargement des employés...</p>
+            </div>
+          </CardContent>
         </Card>
       </div>
     );
@@ -204,6 +257,64 @@ const EmployeesPage = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Département</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un département" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="IT">IT</SelectItem>
+                          <SelectItem value="Finance">Finance</SelectItem>
+                          <SelectItem value="HR">RH</SelectItem>
+                          <SelectItem value="Marketing">Marketing</SelectItem>
+                          <SelectItem value="Operations">Opérations</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Statut</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue="active">
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner le statut" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">Actif</SelectItem>
+                          <SelectItem value="inactive">Inactif</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date de début</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -319,9 +430,31 @@ const EmployeesPage = () => {
                             <Edit className="w-4 h-4" />
                           </Button>
                           {canManageEmployees && (
-                            <Button variant="ghost" size="sm">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-800">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Êtes-vous sûr de vouloir supprimer <strong>{person.name}</strong> ? 
+                                    Cette action est irréversible.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleDeleteEmployee(person)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Supprimer
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
                         </div>
                       </TableCell>
