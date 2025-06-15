@@ -1,36 +1,24 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { CalendarIcon, Plus, Check, X, Clock, Edit, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { leaveRequestsService, LeaveRequest } from '@/services/leaveRequestsService';
+import { useToast } from '@/hooks/use-toast';
+import LeaveRequestForm from '@/components/leave-requests/LeaveRequestForm';
+import LeaveRequestsHeader from '@/components/leave-requests/LeaveRequestsHeader';
+import LeaveRequestTable from '@/components/leave-requests/LeaveRequestTable';
 import LeaveRequestEditModal from '@/components/leave-requests/LeaveRequestEditModal';
 import LeaveRequestDeleteDialog from '@/components/leave-requests/LeaveRequestDeleteDialog';
 import LeaveRequestApprovalModal from '@/components/leave-requests/LeaveRequestApprovalModal';
-import { useToast } from '@/hooks/use-toast';
 
 const LeaveRequestsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
-  const form = useForm();
 
   const isManager = user?.role === 'admin' || user?.role === 'rh' || user?.role === 'gestionnaire';
 
@@ -53,8 +41,6 @@ const LeaveRequestsPage = () => {
     });
     
     loadRequests();
-    setIsDialogOpen(false);
-    form.reset();
     
     toast({
       title: "Demande créée",
@@ -155,271 +141,23 @@ const LeaveRequestsPage = () => {
     setSelectedRequest(null);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return (
-          <Badge variant="secondary">
-            <Clock className="w-3 h-3 mr-1" />
-            En attente
-          </Badge>
-        );
-      case 'approved':
-        return (
-          <Badge variant="default" className="bg-green-600">
-            <Check className="w-3 h-3 mr-1" />
-            Approuvé
-          </Badge>
-        );
-      case 'rejected':
-        return (
-          <Badge variant="destructive">
-            <X className="w-3 h-3 mr-1" />
-            Rejeté
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
   const filteredRequests = isManager 
     ? requests 
     : requests.filter(req => req.employeeName === user?.name);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Demandes de congés</h1>
-          <p className="text-gray-600">
-            {isManager ? 'Gérer les demandes de congés' : 'Mes demandes de congés'}
-          </p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle demande
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Nouvelle demande de congé</DialogTitle>
-              <DialogDescription>
-                Remplissez les détails de votre demande
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Type de congé</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner le type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Congés payés">Congés payés</SelectItem>
-                          <SelectItem value="Congé maladie">Congé maladie</SelectItem>
-                          <SelectItem value="RTT">RTT</SelectItem>
-                          <SelectItem value="Congé maternité">Congé maternité</SelectItem>
-                          <SelectItem value="Autre">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date de début</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP", { locale: fr })
-                              ) : (
-                                <span>Sélectionner une date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date de fin</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP", { locale: fr })
-                              ) : (
-                                <span>Sélectionner une date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="reason"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Motif</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Expliquez le motif de votre demande..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full">
-                  Soumettre la demande
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <LeaveRequestsHeader isManager={isManager}>
+        <LeaveRequestForm onSubmit={onSubmit} />
+      </LeaveRequestsHeader>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Liste des demandes</CardTitle>
-          <CardDescription>
-            {filteredRequests.length} demande(s) trouvée(s)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {isManager && <TableHead>Employé</TableHead>}
-                <TableHead>Type</TableHead>
-                <TableHead>Période</TableHead>
-                <TableHead>Motif</TableHead>
-                <TableHead>Statut</TableHead>
-                {isManager && <TableHead>Commentaire</TableHead>}
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRequests.map((request) => (
-                <TableRow key={request.id}>
-                  {isManager && <TableCell className="font-medium">{request.employeeName}</TableCell>}
-                  <TableCell>{request.type}</TableCell>
-                  <TableCell>
-                    {format(new Date(request.startDate), 'dd/MM/yyyy')} - {format(new Date(request.endDate), 'dd/MM/yyyy')}
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{request.reason}</TableCell>
-                  <TableCell>{getStatusBadge(request.status)}</TableCell>
-                  {isManager && (
-                    <TableCell className="max-w-xs truncate">
-                      {request.managerComment || '-'}
-                    </TableCell>
-                  )}
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      {isManager && request.status === 'pending' ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleApproval(request)}
-                          className="text-blue-600 hover:text-blue-700"
-                        >
-                          Traiter
-                        </Button>
-                      ) : (
-                        <>
-                          {!isManager && request.status === 'pending' && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(request)}
-                                className="text-blue-600 hover:text-blue-700"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(request)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <LeaveRequestTable
+        requests={filteredRequests}
+        isManager={isManager}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onApproval={handleApproval}
+      />
 
       {selectedRequest && (
         <>
