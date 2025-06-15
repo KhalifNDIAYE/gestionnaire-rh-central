@@ -1,9 +1,7 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,82 +13,146 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarIcon, Plus, Check, X, Clock } from 'lucide-react';
+import { CalendarIcon, Plus, Check, X, Clock, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface LeaveRequest {
-  id: string;
-  employeeName: string;
-  type: string;
-  startDate: string;
-  endDate: string;
-  reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string;
-}
-
-const mockLeaveRequests: LeaveRequest[] = [
-  {
-    id: '1',
-    employeeName: 'Jean Dupont',
-    type: 'Congés payés',
-    startDate: '2024-06-15',
-    endDate: '2024-06-20',
-    reason: 'Vacances en famille',
-    status: 'pending',
-    submittedAt: '2024-05-20'
-  },
-  {
-    id: '2',
-    employeeName: 'Marie Martin',
-    type: 'Congé maladie',
-    startDate: '2024-05-28',
-    endDate: '2024-05-30',
-    reason: 'Consultation médicale',
-    status: 'approved',
-    submittedAt: '2024-05-25'
-  },
-  {
-    id: '3',
-    employeeName: 'Paul Bernard',
-    type: 'RTT',
-    startDate: '2024-06-03',
-    endDate: '2024-06-03',
-    reason: 'Récupération',
-    status: 'rejected',
-    submittedAt: '2024-05-22'
-  },
-];
+import { leaveRequestsService, LeaveRequest } from '@/services/leaveRequestsService';
+import LeaveRequestEditModal from '@/components/leave-requests/LeaveRequestEditModal';
+import LeaveRequestDeleteDialog from '@/components/leave-requests/LeaveRequestDeleteDialog';
+import LeaveRequestApprovalModal from '@/components/leave-requests/LeaveRequestApprovalModal';
+import { useToast } from '@/hooks/use-toast';
 
 const LeaveRequestsPage = () => {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<LeaveRequest[]>(mockLeaveRequests);
+  const { toast } = useToast();
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const form = useForm();
 
   const isManager = user?.role === 'admin' || user?.role === 'rh' || user?.role === 'gestionnaire';
 
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  const loadRequests = () => {
+    const allRequests = leaveRequestsService.getAllRequests();
+    setRequests(allRequests);
+  };
+
   const onSubmit = (data: any) => {
-    const newRequest: LeaveRequest = {
-      id: Date.now().toString(),
+    const newRequest = leaveRequestsService.createRequest({
       employeeName: user?.name || '',
       type: data.type,
       startDate: format(data.startDate, 'yyyy-MM-dd'),
       endDate: format(data.endDate, 'yyyy-MM-dd'),
-      reason: data.reason,
-      status: 'pending',
-      submittedAt: format(new Date(), 'yyyy-MM-dd')
-    };
+      reason: data.reason
+    });
     
-    setRequests([newRequest, ...requests]);
+    loadRequests();
     setIsDialogOpen(false);
     form.reset();
+    
+    toast({
+      title: "Demande créée",
+      description: "Votre demande de congé a été soumise avec succès.",
+    });
   };
 
-  const updateRequestStatus = (id: string, status: 'approved' | 'rejected') => {
-    setRequests(requests.map(req => 
-      req.id === id ? { ...req, status } : req
-    ));
+  const handleEdit = (request: LeaveRequest) => {
+    if (request.status !== 'pending') {
+      toast({
+        title: "Modification impossible",
+        description: "Seules les demandes en attente peuvent être modifiées.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSelectedRequest(request);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (requestId: string, updates: Partial<LeaveRequest>) => {
+    const updatedRequest = leaveRequestsService.updateRequest(requestId, updates);
+    if (updatedRequest) {
+      loadRequests();
+      toast({
+        title: "Demande modifiée",
+        description: "Votre demande a été mise à jour avec succès.",
+      });
+    }
+  };
+
+  const handleDelete = (request: LeaveRequest) => {
+    if (request.status !== 'pending') {
+      toast({
+        title: "Suppression impossible",
+        description: "Seules les demandes en attente peuvent être supprimées.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSelectedRequest(request);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedRequest) {
+      const success = leaveRequestsService.deleteRequest(selectedRequest.id);
+      if (success) {
+        loadRequests();
+        toast({
+          title: "Demande supprimée",
+          description: "La demande a été supprimée avec succès.",
+        });
+      }
+    }
+    setDeleteDialogOpen(false);
+    setSelectedRequest(null);
+  };
+
+  const handleApproval = (request: LeaveRequest) => {
+    setSelectedRequest(request);
+    setApprovalModalOpen(true);
+  };
+
+  const handleApprove = (comment?: string) => {
+    if (selectedRequest) {
+      const updatedRequest = leaveRequestsService.approveRequest(
+        selectedRequest.id, 
+        user?.name || 'Manager', 
+        comment
+      );
+      if (updatedRequest) {
+        loadRequests();
+        toast({
+          title: "Demande approuvée",
+          description: `La demande de ${selectedRequest.employeeName} a été approuvée.`,
+        });
+      }
+    }
+    setSelectedRequest(null);
+  };
+
+  const handleReject = (comment?: string) => {
+    if (selectedRequest) {
+      const updatedRequest = leaveRequestsService.rejectRequest(
+        selectedRequest.id, 
+        user?.name || 'Manager', 
+        comment
+      );
+      if (updatedRequest) {
+        loadRequests();
+        toast({
+          title: "Demande rejetée",
+          description: `La demande de ${selectedRequest.employeeName} a été rejetée.`,
+        });
+      }
+    }
+    setSelectedRequest(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -163,17 +225,18 @@ const LeaveRequestsPage = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="paid-leave">Congés payés</SelectItem>
-                          <SelectItem value="sick-leave">Congé maladie</SelectItem>
-                          <SelectItem value="rtt">RTT</SelectItem>
-                          <SelectItem value="maternity">Congé maternité</SelectItem>
-                          <SelectItem value="other">Autre</SelectItem>
+                          <SelectItem value="Congés payés">Congés payés</SelectItem>
+                          <SelectItem value="Congé maladie">Congé maladie</SelectItem>
+                          <SelectItem value="RTT">RTT</SelectItem>
+                          <SelectItem value="Congé maternité">Congé maternité</SelectItem>
+                          <SelectItem value="Autre">Autre</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={form.control}
                   name="startDate"
@@ -295,7 +358,8 @@ const LeaveRequestsPage = () => {
                 <TableHead>Période</TableHead>
                 <TableHead>Motif</TableHead>
                 <TableHead>Statut</TableHead>
-                {isManager && <TableHead>Actions</TableHead>}
+                {isManager && <TableHead>Commentaire</TableHead>}
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -309,35 +373,85 @@ const LeaveRequestsPage = () => {
                   <TableCell className="max-w-xs truncate">{request.reason}</TableCell>
                   <TableCell>{getStatusBadge(request.status)}</TableCell>
                   {isManager && (
-                    <TableCell>
-                      {request.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateRequestStatus(request.id, 'approved')}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => updateRequestStatus(request.id, 'rejected')}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
+                    <TableCell className="max-w-xs truncate">
+                      {request.managerComment || '-'}
                     </TableCell>
                   )}
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      {isManager && request.status === 'pending' ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleApproval(request)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          Traiter
+                        </Button>
+                      ) : (
+                        <>
+                          {!isManager && request.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(request)}
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(request)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {selectedRequest && (
+        <>
+          <LeaveRequestEditModal
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            request={selectedRequest}
+            onSave={handleSaveEdit}
+          />
+          
+          <LeaveRequestDeleteDialog
+            isOpen={deleteDialogOpen}
+            onClose={() => setDeleteDialogOpen(false)}
+            onConfirm={confirmDelete}
+            requestType={selectedRequest.type}
+          />
+          
+          <LeaveRequestApprovalModal
+            isOpen={approvalModalOpen}
+            onClose={() => setApprovalModalOpen(false)}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            requestDetails={{
+              employeeName: selectedRequest.employeeName,
+              type: selectedRequest.type,
+              startDate: format(new Date(selectedRequest.startDate), 'dd/MM/yyyy'),
+              endDate: format(new Date(selectedRequest.endDate), 'dd/MM/yyyy'),
+              reason: selectedRequest.reason
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
