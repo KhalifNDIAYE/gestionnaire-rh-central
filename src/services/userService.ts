@@ -91,6 +91,76 @@ class UserService {
         hireDate: '2023-01-10',
         salary: 2500,
         photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '6',
+        name: 'Laurent Moreau',
+        email: 'laurent.moreau@company.com',
+        role: 'gestionnaire',
+        fonction: 'Directeur Technique',
+        unitId: '3',
+        unitName: 'Directeur Technique (DT)',
+        phone: '+33 1 23 45 67 94',
+        address: '987 Avenue Montaigne, Bordeaux',
+        hireDate: '2019-06-01',
+        salary: 4500,
+        photoUrl: 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '7',
+        name: 'Camille Bernard',
+        email: 'camille.bernard@company.com',
+        role: 'gestionnaire',
+        fonction: 'Conseiller Stratégique',
+        unitId: '4',
+        unitName: 'Conseillers',
+        phone: '+33 1 23 45 67 95',
+        address: '456 Rue Saint-Honoré, Lille',
+        hireDate: '2021-11-15',
+        salary: 3800,
+        photoUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '8',
+        name: 'Thomas Petit',
+        email: 'thomas.petit@company.com',
+        role: 'agent',
+        fonction: 'Responsable Communication',
+        unitId: '9',
+        unitName: 'CELLULE - Communication et gestion des Ressources Documentaires',
+        phone: '+33 1 23 45 67 96',
+        address: '159 Boulevard Haussmann, Nantes',
+        hireDate: '2022-08-20',
+        salary: 3200,
+        photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '9',
+        name: 'Julie Rousseau',
+        email: 'julie.rousseau@company.com',
+        role: 'agent',
+        fonction: 'Administrateur Système',
+        unitId: '10',
+        unitName: 'CELLULE - Informatique, gestion de données et services techniques',
+        phone: '+33 1 23 45 67 97',
+        address: '753 Rue de la République, Strasbourg',
+        hireDate: '2023-02-10',
+        salary: 3000,
+        photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '10',
+        name: 'Nicolas Garcia',
+        email: 'nicolas.garcia@company.com',
+        role: 'agent',
+        fonction: 'Chargé de Financement',
+        unitId: '11',
+        unitName: 'CELLULE - Mobilisation des ressources financières',
+        phone: '+33 1 23 45 67 98',
+        address: '852 Avenue de la Liberté, Montpellier',
+        hireDate: '2022-12-05',
+        salary: 2900,
+        photoUrl: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=150&h=150&fit=crop&crop=face'
       }
     ];
   }
