@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface User {
@@ -43,11 +44,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string, mfaCode?: string): Promise<boolean> => {
     // Simulation d'une authentification
-    if (email === 'admin@cse.sn' && password === 'admin') {
+    if ((email === 'admin@cse.sn' || email === 'admin@company.com') && password === 'admin') {
       const adminUser: User = {
         id: '1',
         name: 'Cheikh MBOW',
-        email: 'cheikh.mbow@cse.sn',
+        email: email,
         role: 'admin',
         fonction: 'Directeur Général',
         unitId: '2',
@@ -58,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         salary: 8000,
         photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         voipNumber: '2001',
-        professionalEmail: 'cheikh.mbow@cse.sn',
+        professionalEmail: email,
         professionalAddress: 'Dakar, Sénégal',
         mfaEnabled: false
       };
@@ -66,6 +67,81 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('user', JSON.stringify(adminUser));
       return true;
     }
+    
+    // Autres comptes de démonstration
+    if (password === 'password') {
+      let demoUser: User | null = null;
+      
+      switch (email) {
+        case 'marie.dubois@company.com':
+          demoUser = {
+            id: '2',
+            name: 'Marie Dubois',
+            email: email,
+            role: 'rh',
+            fonction: 'Responsable RH',
+            unitId: '3',
+            unitName: 'Ressources Humaines',
+            phone: '+221 33 234 56 78',
+            address: 'Dakar, Sénégal',
+            hireDate: '2021-03-10',
+            salary: 6000,
+            photoUrl: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+            voipNumber: '2002',
+            professionalEmail: email,
+            professionalAddress: 'Dakar, Sénégal',
+            mfaEnabled: false
+          };
+          break;
+        case 'pierre.martin@company.com':
+          demoUser = {
+            id: '3',
+            name: 'Pierre Martin',
+            email: email,
+            role: 'gestionnaire',
+            fonction: 'Gestionnaire de Projets',
+            unitId: '4',
+            unitName: 'Gestion de Projets',
+            phone: '+221 33 345 67 89',
+            address: 'Dakar, Sénégal',
+            hireDate: '2022-01-15',
+            salary: 5500,
+            photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            voipNumber: '2003',
+            professionalEmail: email,
+            professionalAddress: 'Dakar, Sénégal',
+            mfaEnabled: false
+          };
+          break;
+        case 'sophie.leroy@company.com':
+          demoUser = {
+            id: '4',
+            name: 'Sophie Leroy',
+            email: email,
+            role: 'agent',
+            fonction: 'Agent Administratif',
+            unitId: '5',
+            unitName: 'Administration',
+            phone: '+221 33 456 78 90',
+            address: 'Dakar, Sénégal',
+            hireDate: '2023-05-20',
+            salary: 4500,
+            photoUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+            voipNumber: '2004',
+            professionalEmail: email,
+            professionalAddress: 'Dakar, Sénégal',
+            mfaEnabled: false
+          };
+          break;
+      }
+      
+      if (demoUser) {
+        setUser(demoUser);
+        localStorage.setItem('user', JSON.stringify(demoUser));
+        return true;
+      }
+    }
+    
     return false;
   };
 
@@ -112,4 +188,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
 
