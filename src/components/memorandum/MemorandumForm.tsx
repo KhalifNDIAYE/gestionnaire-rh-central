@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +26,7 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
     targetAudience: ['tous'],
     projectCode: '',
     componentCode: '',
-    activityCode: '',
-    expirationDate: ''
+    activityCode: ''
   });
 
   const generateMemoNumber = () => {
@@ -99,8 +97,7 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
         priority: formData.priority,
         authorId: user.id,
         authorName: user.name,
-        targetAudience: formData.targetAudience,
-        expirationDate: formData.expirationDate || undefined
+        targetAudience: formData.targetAudience
       });
 
       toast({
@@ -117,15 +114,15 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
         targetAudience: ['tous'],
         projectCode: '',
         componentCode: '',
-        activityCode: '',
-        expirationDate: ''
+        activityCode: ''
       });
 
       onSuccess?.();
     } catch (error) {
+      console.error('Error creating memorandum:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de créer le mémorandum.',
+        description: 'Impossible de créer le mémorandum. Veuillez réessayer.',
         variant: 'destructive',
       });
     } finally {
@@ -301,16 +298,6 @@ Motif :\t\t\tMotif :\t\t\tMotif :`;
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div>
-            <Label htmlFor="expirationDate">Date d'expiration (optionnel)</Label>
-            <Input
-              id="expirationDate"
-              type="date"
-              value={formData.expirationDate}
-              onChange={(e) => setFormData(prev => ({ ...prev, expirationDate: e.target.value }))}
-            />
           </div>
 
           <Button type="submit" disabled={loading} className="w-full">
