@@ -176,21 +176,6 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
           </Collapsible>
         ))}
       </nav>
-
-      {/* User info */}
-      {!collapsed && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.fonction}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
