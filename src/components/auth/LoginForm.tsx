@@ -5,11 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Users, Lock } from 'lucide-react';
+import { Users, Lock, ArrowLeft, Tv } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import MFAVerification from './MFAVerification';
 
-const LoginForm = () => {
+interface LoginFormProps {
+  onBackToPortal?: () => void;
+  isAndroidTV?: boolean;
+}
+
+const LoginForm = ({ onBackToPortal, isAndroidTV = false }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,12 +22,20 @@ const LoginForm = () => {
   const [mfaLoading, setMfaLoading] = useState(false);
   const { login } = useAuth();
 
+  // Détecter si on est sur Android TV via user agent
+  useEffect(() => {
+    const isTV = /Android.*TV|BRAVIA|GoogleTV|SmartTV/i.test(navigator.userAgent);
+    if (isTV && !isAndroidTV) {
+      // Rediriger vers le portail TV si détecté
+      window.location.href = '/?tv=true';
+    }
+  }, [isAndroidTV]);
+
   const handleInitialLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      // Première tentative de connexion sans MFA
       const success = await login(email, password);
       if (success) {
         toast({
@@ -30,8 +43,6 @@ const LoginForm = () => {
           description: "Bienvenue dans l'application RH",
         });
       } else {
-        // Vérifier si l'utilisateur a la MFA activée
-        // Pour la démo, on suppose que certains utilisateurs ont la MFA
         if (email === 'admin@company.com') {
           setShowMFAVerification(true);
         } else {
@@ -90,24 +101,42 @@ const LoginForm = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className={`min-h-screen ${isAndroidTV ? 'bg-black' : 'bg-gradient-to-br from-blue-50 to-indigo-100'} flex items-center justify-center p-4`}>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-              <Users className="w-8 h-8 text-white" />
+            <div className={`inline-flex items-center justify-center ${isAndroidTV ? 'w-20 h-20' : 'w-16 h-16'} bg-blue-600 rounded-full mb-4`}>
+              {isAndroidTV ? <Tv className="w-10 h-10 text-white" /> : <Users className="w-8 h-8 text-white" />}
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">RH Management</h1>
-            <p className="text-gray-600">Gestion des Ressources Humaines</p>
+            <h1 className={`${isAndroidTV ? 'text-4xl text-white' : 'text-3xl text-gray-900'} font-bold mb-2`}>
+              RH Management
+            </h1>
+            <p className={`${isAndroidTV ? 'text-xl text-gray-300' : 'text-gray-600'}`}>
+              {isAndroidTV ? 'Connexion Android TV' : 'Gestion des Ressources Humaines'}
+            </p>
           </div>
 
-          <Card className="shadow-xl">
+          <Card className={`shadow-xl ${isAndroidTV ? 'bg-gray-800 border-gray-700' : ''}`}>
             <CardHeader>
-              <CardTitle className="text-center text-xl">Connexion</CardTitle>
+              <CardTitle className={`text-center text-xl ${isAndroidTV ? 'text-white' : ''}`}>
+                Connexion Employés
+              </CardTitle>
+              {onBackToPortal && !isAndroidTV && (
+                <Button
+                  variant="ghost"
+                  onClick={onBackToPortal}
+                  className="absolute top-4 left-4"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Retour au portail
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleInitialLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className={isAndroidTV ? 'text-white' : ''}>
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -116,11 +145,14 @@ const LoginForm = () => {
                     placeholder="votre.email@entreprise.com"
                     required
                     disabled={loading}
+                    className={isAndroidTV ? 'bg-gray-700 border-gray-600 text-white' : ''}
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
+                  <Label htmlFor="password" className={isAndroidTV ? 'text-white' : ''}>
+                    Mot de passe
+                  </Label>
                   <Input
                     id="password"
                     type="password"
@@ -129,6 +161,7 @@ const LoginForm = () => {
                     placeholder="••••••••"
                     required
                     disabled={loading}
+                    className={isAndroidTV ? 'bg-gray-700 border-gray-600 text-white' : ''}
                   />
                 </div>
 
@@ -147,14 +180,18 @@ const LoginForm = () => {
                 </Button>
               </form>
 
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">Comptes de démonstration :</p>
-                <div className="text-xs space-y-1">
+              <div className={`mt-6 p-4 ${isAndroidTV ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+                <p className={`${isAndroidTV ? 'text-sm text-gray-300' : 'text-sm text-gray-600'} mb-2`}>
+                  Comptes de démonstration :
+                </p>
+                <div className={`text-xs space-y-1 ${isAndroidTV ? 'text-gray-400' : ''}`}>
                   <p><strong>Admin (avec MFA):</strong> admin@company.com</p>
                   <p><strong>RH:</strong> marie.dubois@company.com</p>
                   <p><strong>Gestionnaire:</strong> pierre.martin@company.com</p>
                   <p><strong>Agent:</strong> sophie.leroy@company.com</p>
-                  <p className="text-blue-600 font-medium">Mot de passe: password</p>
+                  <p className={`${isAndroidTV ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
+                    Mot de passe: password
+                  </p>
                 </div>
               </div>
             </CardContent>

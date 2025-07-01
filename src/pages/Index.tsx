@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
 import Dashboard from '../components/dashboard/Dashboard';
@@ -15,6 +14,7 @@ import SettingsPage from './SettingsPage';
 import DirectoryPage from './DirectoryPage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
+import PublicPortal from '../components/portal/PublicPortal';
 
 // Lazy load pour le module de calcul des salaires
 const SalaryCalculationPage = React.lazy(() => import('./SalaryCalculationPage'));
@@ -23,9 +23,34 @@ const TimeTrackingPage = React.lazy(() => import('./TimeTrackingPage'));
 const AppContent = () => {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [isAndroidTV, setIsAndroidTV] = useState(false);
 
+  // Détecter Android TV et les paramètres URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tvParam = urlParams.get('tv');
+    const isTV = tvParam === 'true' || /Android.*TV|BRAVIA|GoogleTV|SmartTV/i.test(navigator.userAgent);
+    setIsAndroidTV(isTV);
+  }, []);
+
+  // Si pas d'utilisateur connecté, afficher le portail public ou le formulaire de connexion
   if (!user) {
-    return <LoginForm />;
+    if (showLoginForm) {
+      return (
+        <LoginForm 
+          onBackToPortal={() => setShowLoginForm(false)} 
+          isAndroidTV={isAndroidTV}
+        />
+      );
+    }
+    
+    return (
+      <PublicPortal 
+        onLoginClick={() => setShowLoginForm(true)}
+        isAndroidTV={isAndroidTV}
+      />
+    );
   }
 
   const renderCurrentPage = () => {
