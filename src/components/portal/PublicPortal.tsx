@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { communicationService, CommunicationAnnouncement, CommunicationSettings } from '../../services/communicationService';
-import { Calendar, MapPin, Clock, User, LogIn, Tv } from 'lucide-react';
+import { Calendar, MapPin, Clock, User, LogIn, Tv, Maximize, Minimize } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Autoplay from "embla-carousel-autoplay";
@@ -20,6 +19,7 @@ const PublicPortal = ({ onLoginClick, isAndroidTV = false }: PublicPortalProps) 
   const [settings, setSettings] = useState<CommunicationSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,6 +50,71 @@ const PublicPortal = ({ onLoginClick, isAndroidTV = false }: PublicPortalProps) 
       clearInterval(timeInterval);
     };
   }, []);
+
+  // Gestion du plein écran
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    // Proposition automatique du plein écran pour Android TV
+    if (isAndroidTV && !document.fullscreenElement) {
+      const timer = setTimeout(() => {
+        enterFullscreen();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [isAndroidTV]);
+
+  // Gestion des touches clavier pour le plein écran
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === 'F11') {
+        event.preventDefault();
+        toggleFullscreen();
+      }
+      if (event.key === 'Escape' && isFullscreen) {
+        exitFullscreen();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [isFullscreen]);
+
+  const enterFullscreen = async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch (error) {
+      console.log('Fullscreen not supported or permission denied');
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.log('Exit fullscreen failed');
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (isFullscreen) {
+      exitFullscreen();
+    } else {
+      enterFullscreen();
+    }
+  };
 
   const getTypeColor = (type: CommunicationAnnouncement['type']) => {
     switch (type) {
@@ -104,7 +169,7 @@ const PublicPortal = ({ onLoginClick, isAndroidTV = false }: PublicPortalProps) 
 
   return (
     <div className={`min-h-screen ${isAndroidTV ? 'bg-black text-white p-8' : 'bg-gradient-to-br from-blue-50 to-indigo-100 p-4'}`}>
-      {/* Header avec logo et heure */}
+      {/* Header avec logo, heure et bouton plein écran */}
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
           <div className={`inline-flex items-center justify-center ${isAndroidTV ? 'w-20 h-20' : 'w-16 h-16'} bg-blue-600 rounded-full`}>
@@ -120,15 +185,47 @@ const PublicPortal = ({ onLoginClick, isAndroidTV = false }: PublicPortalProps) 
           </div>
         </div>
         
-        <div className="text-right">
-          <div className={`${isAndroidTV ? 'text-3xl' : 'text-2xl'} font-bold ${isAndroidTV ? 'text-white' : 'text-gray-900'}`}>
-            {format(currentTime, 'HH:mm:ss')}
-          </div>
-          <div className={`${isAndroidTV ? 'text-lg text-gray-300' : 'text-gray-600'}`}>
-            {format(currentTime, 'EEEE d MMMM yyyy', { locale: fr })}
+        <div className="flex items-center gap-4">
+          {/* Bouton plein écran */}
+          <Button
+            variant={isAndroidTV ? "secondary" : "outline"}
+            size={isAndroidTV ? "lg" : "default"}
+            onClick={toggleFullscreen}
+            className={`${isAndroidTV ? 'text-lg px-6 py-3' : ''}`}
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize className={`${isAndroidTV ? 'w-6 h-6' : 'w-4 h-4'} mr-2`} />
+                {!isAndroidTV && "Quitter"}
+              </>
+            ) : (
+              <>
+                <Maximize className={`${isAndroidTV ? 'w-6 h-6' : 'w-4 h-4'} mr-2`} />
+                {!isAndroidTV && "Plein écran"}
+              </>
+            )}
+          </Button>
+          
+          {/* Heure */}
+          <div className="text-right">
+            <div className={`${isAndroidTV ? 'text-3xl' : 'text-2xl'} font-bold ${isAndroidTV ? 'text-white' : 'text-gray-900'}`}>
+              {format(currentTime, 'HH:mm:ss')}
+            </div>
+            <div className={`${isAndroidTV ? 'text-lg text-gray-300' : 'text-gray-600'}`}>
+              {format(currentTime, 'EEEE d MMMM yyyy', { locale: fr })}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Indication pour le plein écran */}
+      {!isFullscreen && !isAndroidTV && (
+        <div className="mb-4 text-center">
+          <p className="text-sm text-gray-600 bg-blue-50 px-4 py-2 rounded-lg inline-block">
+            💡 Appuyez sur <kbd className="bg-gray-200 px-2 py-1 rounded text-xs font-mono">F11</kbd> ou utilisez le bouton pour passer en plein écran
+          </p>
+        </div>
+      )}
 
       {/* Contenu principal */}
       <div className="max-w-7xl mx-auto">
