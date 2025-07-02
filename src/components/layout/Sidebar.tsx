@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { settingsService, SystemSettings } from '../../services/settingsService';
@@ -22,7 +23,8 @@ import {
   Briefcase,
   FolderKanban,
   Network,
-  Contact
+  Contact,
+  Megaphone
 } from 'lucide-react';
 
 interface MenuItem {
@@ -39,6 +41,7 @@ const menuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Tableau de bord', icon: Home, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
   { id: 'directory', label: 'Annuaire', icon: Contact, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal', moduleKey: 'directory' },
   { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal', moduleKey: 'memorandum' },
+  { id: 'communication', label: 'Communication', icon: Megaphone, roles: ['admin'], group: 'principal', moduleKey: 'communication' },
   { id: 'profile', label: 'Mon profil', icon: User, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
   
   // GESTION RH

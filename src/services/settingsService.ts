@@ -35,6 +35,7 @@ export interface ModuleSettings {
   payroll: boolean;
   salary: boolean;
   projects: boolean;
+  communication: boolean;
 }
 
 export interface BudgetCode {
@@ -93,6 +94,7 @@ class SettingsService {
       payroll: true,
       salary: true,
       projects: true,
+      communication: true,
     },
     budgetCodes: {
       codes: [
