@@ -37,11 +37,25 @@ export interface ModuleSettings {
   projects: boolean;
 }
 
+export interface BudgetCode {
+  id: string;
+  libelle: string;
+  codeProjet: string;
+  codeComposante: string;
+  codeActivite: string;
+  active: boolean;
+}
+
+export interface BudgetCodeSettings {
+  codes: BudgetCode[];
+}
+
 export interface SystemSettings {
   general: GeneralSettings;
   notifications: NotificationSettings;
   appearance: AppearanceSettings;
   modules: ModuleSettings;
+  budgetCodes: BudgetCodeSettings;
 }
 
 class SettingsService {
@@ -79,6 +93,74 @@ class SettingsService {
       payroll: true,
       salary: true,
       projects: true,
+    },
+    budgetCodes: {
+      codes: [
+        {
+          id: '1',
+          libelle: 'EQUIPEMENTS BUREAUTIQUE ET INFORMATIQUE',
+          codeProjet: '05006',
+          codeComposante: '0500601',
+          codeActivite: '050060101',
+          active: true
+        },
+        {
+          id: '2',
+          libelle: 'FOURNITURES BUREAUTIQUES ET INFORMATIQUES',
+          codeProjet: '05007',
+          codeComposante: '0500701',
+          codeActivite: '050070101',
+          active: true
+        },
+        {
+          id: '3',
+          libelle: 'ACTION DE VISIBILITE',
+          codeProjet: '05007',
+          codeComposante: '0500701',
+          codeActivite: '050070101',
+          active: true
+        },
+        {
+          id: '4',
+          libelle: 'TELEPHONE',
+          codeProjet: '05008',
+          codeComposante: '0500801',
+          codeActivite: '050080101',
+          active: true
+        },
+        {
+          id: '5',
+          libelle: 'ELECTRICITE',
+          codeProjet: '05008',
+          codeComposante: '0500801',
+          codeActivite: '050080102',
+          active: true
+        },
+        {
+          id: '6',
+          libelle: 'CARBURANTS',
+          codeProjet: '05008',
+          codeComposante: '0500801',
+          codeActivite: '050080103',
+          active: true
+        },
+        {
+          id: '7',
+          libelle: 'CARTE A PEAGES',
+          codeProjet: '05008',
+          codeComposante: '0500801',
+          codeActivite: '050080104',
+          active: true
+        },
+        {
+          id: '8',
+          libelle: 'DIVERS ET IMPREVUS',
+          codeProjet: '05009',
+          codeComposante: '0500901',
+          codeActivite: '050090101',
+          active: true
+        }
+      ]
     }
   };
 
@@ -169,7 +251,7 @@ class SettingsService {
     }
   }
 
-  async updateModuleSettings(data: ModuleSettings): Promise<SystemSettings> {
+  async updateModuleSettings(data: Partial<ModuleSettings>): Promise<SystemSettings> {
     try {
       const updatedSettings = await apiService.put<SystemSettings>('/settings/modules', data);
       return updatedSettings;
@@ -181,6 +263,27 @@ class SettingsService {
         ...currentSettings,
         modules: {
           ...currentSettings.modules,
+          ...data,
+        }
+      };
+      
+      this.saveSettingsToStorage(updatedSettings);
+      return updatedSettings;
+    }
+  }
+
+  async updateBudgetCodeSettings(data: BudgetCodeSettings): Promise<SystemSettings> {
+    try {
+      const updatedSettings = await apiService.put<SystemSettings>('/settings/budget-codes', data);
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating budget code settings via API, using local fallback:', error);
+      
+      const currentSettings = this.getSettingsFromStorage();
+      const updatedSettings = {
+        ...currentSettings,
+        budgetCodes: {
+          ...currentSettings.budgetCodes,
           ...data,
         }
       };

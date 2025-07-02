@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { memorandumService, Memorandum } from '../../services/memorandumService';
+import { settingsService, BudgetCode } from '../../services/settingsService';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface MemorandumFormProps {
@@ -17,6 +18,7 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [budgetCodes, setBudgetCodes] = useState<BudgetCode[]>([]);
   const [formData, setFormData] = useState({
     number: '',
     object: '',
@@ -24,6 +26,7 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
     category: 'information' as const,
     priority: 'medium' as const,
     targetAudience: ['tous'],
+    selectedBudgetCodeId: '',
     projectCode: '',
     componentCode: '',
     activityCode: ''
@@ -75,7 +78,8 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
     return now.toLocaleDateString('fr-FR', options);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
+    loadBudgetCodes();
     if (user && !formData.number) {
       setFormData(prev => ({
         ...prev,
@@ -83,6 +87,29 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
       }));
     }
   }, [user]);
+
+  const loadBudgetCodes = async () => {
+    try {
+      const settings = await settingsService.getSettings();
+      const activeCodes = settings.budgetCodes.codes.filter(code => code.active);
+      setBudgetCodes(activeCodes);
+    } catch (error) {
+      console.error('Error loading budget codes:', error);
+    }
+  };
+
+  const handleBudgetCodeChange = (budgetCodeId: string) => {
+    const selectedCode = budgetCodes.find(code => code.id === budgetCodeId);
+    if (selectedCode) {
+      setFormData(prev => ({
+        ...prev,
+        selectedBudgetCodeId: budgetCodeId,
+        projectCode: selectedCode.codeProjet,
+        componentCode: selectedCode.codeComposante,
+        activityCode: selectedCode.codeActivite
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +159,7 @@ const MemorandumForm = ({ onSuccess }: MemorandumFormProps) => {
         category: 'information',
         priority: 'medium',
         targetAudience: ['tous'],
+        selectedBudgetCodeId: '',
         projectCode: '',
         componentCode: '',
         activityCode: ''
@@ -246,9 +274,29 @@ Motif :\t\t\tMotif :\t\t\tMotif :`;
             />
           </div>
 
-          {/* Codes budgétaires (obligatoire) */}
+          {/* Codes budgétaires avec liste déroulante */}
           <div className="bg-red-50 border border-red-200 p-4 rounded-lg space-y-4">
             <h3 className="font-semibold text-red-800">Codes budgétaires (obligatoire)</h3>
+            
+            <div>
+              <Label htmlFor="budgetCodeSelect">Sélectionner le libellé *</Label>
+              <Select 
+                value={formData.selectedBudgetCodeId} 
+                onValueChange={handleBudgetCodeChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un libellé..." />
+                </SelectTrigger>
+                <SelectContent className="bg-white border shadow-lg z-50">
+                  {budgetCodes.map((code) => (
+                    <SelectItem key={code.id} value={code.id}>
+                      {code.libelle}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="projectCode">Code projet *</Label>
@@ -294,7 +342,7 @@ Motif :\t\t\tMotif :\t\t\tMotif :`;
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border shadow-lg z-50">
                   <SelectItem value="information">Information</SelectItem>
                   <SelectItem value="directive">Directive</SelectItem>
                   <SelectItem value="rappel">Rappel</SelectItem>
@@ -312,7 +360,7 @@ Motif :\t\t\tMotif :\t\t\tMotif :`;
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white border shadow-lg z-50">
                   <SelectItem value="low">Faible</SelectItem>
                   <SelectItem value="medium">Moyenne</SelectItem>
                   <SelectItem value="high">Élevée</SelectItem>

@@ -143,7 +143,20 @@ const ModuleSettings = () => {
   const handleModuleSubmit = async (data: z.infer<typeof moduleFormSchema>) => {
     try {
       setLoading(true);
-      await settingsService.updateModuleSettings(data);
+      const moduleSettings: ModuleSettingsType = {
+        directory: data.directory,
+        memorandum: data.memorandum,
+        employees: data.employees,
+        functions: data.functions,
+        leaveRequests: data.leaveRequests,
+        organigramme: data.organigramme,
+        timeTracking: data.timeTracking,
+        payroll: data.payroll,
+        salary: data.salary,
+        projects: data.projects,
+      };
+      
+      await settingsService.updateModuleSettings(moduleSettings);
       toast({
         title: "Paramètres mis à jour",
         description: "La configuration des modules a été mise à jour avec succès. Rechargez la page pour voir les changements.",
