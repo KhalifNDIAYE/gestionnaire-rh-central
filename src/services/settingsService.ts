@@ -1,4 +1,3 @@
-
 import { apiService } from './apiService';
 
 export interface GeneralSettings {
@@ -25,10 +24,24 @@ export interface AppearanceSettings {
   sidebarCollapsed: boolean;
 }
 
+export interface ModuleSettings {
+  directory: boolean;
+  memorandum: boolean;
+  employees: boolean;
+  functions: boolean;
+  leaveRequests: boolean;
+  organigramme: boolean;
+  timeTracking: boolean;
+  payroll: boolean;
+  salary: boolean;
+  projects: boolean;
+}
+
 export interface SystemSettings {
   general: GeneralSettings;
   notifications: NotificationSettings;
   appearance: AppearanceSettings;
+  modules: ModuleSettings;
 }
 
 class SettingsService {
@@ -54,6 +67,18 @@ class SettingsService {
       fontSize: 'medium',
       language: 'fr',
       sidebarCollapsed: false,
+    },
+    modules: {
+      directory: true,
+      memorandum: true,
+      employees: true,
+      functions: true,
+      leaveRequests: true,
+      organigramme: true,
+      timeTracking: true,
+      payroll: true,
+      salary: true,
+      projects: true,
     }
   };
 
@@ -135,6 +160,27 @@ class SettingsService {
         ...currentSettings,
         appearance: {
           ...currentSettings.appearance,
+          ...data,
+        }
+      };
+      
+      this.saveSettingsToStorage(updatedSettings);
+      return updatedSettings;
+    }
+  }
+
+  async updateModuleSettings(data: ModuleSettings): Promise<SystemSettings> {
+    try {
+      const updatedSettings = await apiService.put<SystemSettings>('/settings/modules', data);
+      return updatedSettings;
+    } catch (error) {
+      console.error('Error updating module settings via API, using local fallback:', error);
+      
+      const currentSettings = this.getSettingsFromStorage();
+      const updatedSettings = {
+        ...currentSettings,
+        modules: {
+          ...currentSettings.modules,
           ...data,
         }
       };

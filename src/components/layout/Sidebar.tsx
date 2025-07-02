@@ -1,6 +1,6 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { settingsService, SystemSettings } from '../../services/settingsService';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -31,26 +31,27 @@ interface MenuItem {
   icon: React.ElementType;
   roles: string[];
   group: 'principal' | 'rh' | 'finance' | 'parametrages';
+  moduleKey?: keyof SystemSettings['modules'];
 }
 
 const menuItems: MenuItem[] = [
   // MENU PRINCIPAL
   { id: 'dashboard', label: 'Tableau de bord', icon: Home, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
-  { id: 'directory', label: 'Annuaire', icon: Contact, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
-  { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
+  { id: 'directory', label: 'Annuaire', icon: Contact, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal', moduleKey: 'directory' },
+  { id: 'memorandum', label: 'Mémorandums', icon: BookOpen, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal', moduleKey: 'memorandum' },
   { id: 'profile', label: 'Mon profil', icon: User, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'principal' },
   
   // GESTION RH
-  { id: 'employees', label: 'Gestion des agents', icon: Users, roles: ['admin', 'rh'], group: 'rh' },
-  { id: 'functions', label: 'Gestion des fonctions', icon: Briefcase, roles: ['admin'], group: 'rh' },
-  { id: 'leave-requests', label: 'Demandes de congés', icon: Calendar, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'rh' },
-  { id: 'organigramme', label: 'Organigramme', icon: Network, roles: ['admin', 'rh'], group: 'rh' },
-  { id: 'time-tracking', label: 'Pointage', icon: Clock, roles: ['admin', 'rh', 'agent'], group: 'rh' },
+  { id: 'employees', label: 'Gestion des agents', icon: Users, roles: ['admin', 'rh'], group: 'rh', moduleKey: 'employees' },
+  { id: 'functions', label: 'Gestion des fonctions', icon: Briefcase, roles: ['admin'], group: 'rh', moduleKey: 'functions' },
+  { id: 'leave-requests', label: 'Demandes de congés', icon: Calendar, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'rh', moduleKey: 'leaveRequests' },
+  { id: 'organigramme', label: 'Organigramme', icon: Network, roles: ['admin', 'rh'], group: 'rh', moduleKey: 'organigramme' },
+  { id: 'time-tracking', label: 'Pointage', icon: Clock, roles: ['admin', 'rh', 'agent'], group: 'rh', moduleKey: 'timeTracking' },
   
   // GESTION FINANCIERE
-  { id: 'payroll', label: 'Bulletins de salaire', icon: FileText, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'finance' },
-  { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'], group: 'finance' },
-  { id: 'projects', label: 'Gestion des projets', icon: FolderKanban, roles: ['admin', 'gestionnaire'], group: 'finance' },
+  { id: 'payroll', label: 'Bulletins de salaire', icon: FileText, roles: ['admin', 'rh', 'gestionnaire', 'agent'], group: 'finance', moduleKey: 'payroll' },
+  { id: 'salary', label: 'Calcul des salaires', icon: DollarSign, roles: ['admin', 'gestionnaire'], group: 'finance', moduleKey: 'salary' },
+  { id: 'projects', label: 'Gestion des projets', icon: FolderKanban, roles: ['admin', 'gestionnaire'], group: 'finance', moduleKey: 'projects' },
   
   // PARAMETRAGES
   { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['admin'], group: 'parametrages' },
@@ -76,11 +77,35 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
     finance: true,
     parametrages: true
   });
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   const { user } = useAuth();
 
-  const filteredMenuItems = menuItems.filter(item => 
-    item.roles.includes(user?.role || '')
-  );
+  // Charger les paramètres au montage
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settingsData = await settingsService.getSettings();
+        setSettings(settingsData);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const filteredMenuItems = menuItems.filter(item => {
+    // Vérifier les rôles
+    if (!item.roles.includes(user?.role || '')) {
+      return false;
+    }
+    
+    // Vérifier si le module est activé (sauf pour les éléments sans clé de module)
+    if (item.moduleKey && settings?.modules) {
+      return settings.modules[item.moduleKey];
+    }
+    
+    return true;
+  });
 
   // Grouper les éléments par catégorie
   const groupedItems = filteredMenuItems.reduce((acc, item) => {

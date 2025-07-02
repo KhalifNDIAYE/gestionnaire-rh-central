@@ -16,6 +16,7 @@ import AnnouncementManager from '../components/communication/AnnouncementManager
 import ImageUpload from '../components/ui/image-upload';
 import BrandingPreview from '../components/branding/BrandingPreview';
 import SecuritySettings from '../components/security/SecuritySettings';
+import ModuleSettings from '../components/settings/ModuleSettings';
 
 // Schéma pour la configuration du branding
 const brandingFormSchema = z.object({
@@ -321,6 +322,7 @@ const SettingsPage = () => {
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList>
           <TabsTrigger value="general">Général</TabsTrigger>
+          <TabsTrigger value="modules">Modules</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="appearance">Apparence</TabsTrigger>
           <TabsTrigger value="security">Sécurité</TabsTrigger>
@@ -425,6 +427,11 @@ const SettingsPage = () => {
               </Form>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Nouveau: Gestion des modules */}
+        <TabsContent value="modules">
+          <ModuleSettings />
         </TabsContent>
 
         {/* Paramètres de notification */}
