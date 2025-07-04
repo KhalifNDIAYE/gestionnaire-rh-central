@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,20 +66,29 @@ const AnnouncementManager = () => {
   const settingsForm = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      carouselDuration: 15000,
+      carouselDuration: 20000,
       autoplay: true,
     },
   });
 
   useEffect(() => {
     loadData();
+
+    // S'abonner aux changements en temps réel
+    const unsubscribeAnnouncements = communicationService.subscribeToAnnouncements(setAnnouncements);
+    const unsubscribeSettings = communicationService.subscribeToSettings(setSettings);
+
+    return () => {
+      unsubscribeAnnouncements();
+      unsubscribeSettings();
+    };
   }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [announcementsData, settingsData] = await Promise.all([
-        communicationService.getActiveAnnouncements(),
+        communicationService.getAllAnnouncements(),
         communicationService.getCommunicationSettings()
       ]);
       setAnnouncements(announcementsData);
@@ -399,12 +409,18 @@ const AnnouncementManager = () => {
                     name="imageUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <ImageUpload
-                          onImageChange={(imageUrl) => field.onChange(imageUrl || '')}
-                          currentImage={field.value}
-                          maxSizeInMB={2}
-                          acceptedFormats={['image/jpeg', 'image/png', 'image/webp', 'image/gif']}
-                        />
+                        <FormLabel>Image (optionnel)</FormLabel>
+                        <FormControl>
+                          <ImageUpload
+                            onImageChange={(imageUrl) => field.onChange(imageUrl || '')}
+                            currentImage={field.value}
+                            maxSizeInMB={5}
+                            acceptedFormats={['image/jpeg', 'image/png', 'image/webp', 'image/gif']}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Formats acceptés: JPEG, PNG, WebP, GIF • Taille max: 5MB • Dimensions recommandées: 1200x600px
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

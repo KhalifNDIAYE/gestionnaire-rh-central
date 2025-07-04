@@ -31,10 +31,15 @@ const AnnouncementCarousel = () => {
     };
 
     loadData();
-    
-    // Actualiser les données toutes les 5 minutes
-    const interval = setInterval(loadData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+
+    // S'abonner aux changements en temps réel
+    const unsubscribeAnnouncements = communicationService.subscribeToAnnouncements(setAnnouncements);
+    const unsubscribeSettings = communicationService.subscribeToSettings(setSettings);
+
+    return () => {
+      unsubscribeAnnouncements();
+      unsubscribeSettings();
+    };
   }, []);
 
   const getTypeColor = (type: CommunicationAnnouncement['type']) => {
@@ -85,7 +90,7 @@ const AnnouncementCarousel = () => {
           Bienvenue dans l'administration du système RH
         </h2>
         <p className="text-gray-600">
-          Voici un aperçu de vos informations importantes.
+          Aucune annonce active pour le moment.
         </p>
       </div>
     );
@@ -96,7 +101,7 @@ const AnnouncementCarousel = () => {
   if (settings?.autoplay) {
     carouselPlugins.push(
       Autoplay({
-        delay: settings.carouselDuration || 15000,
+        delay: settings.carouselDuration || 20000,
       })
     );
   }

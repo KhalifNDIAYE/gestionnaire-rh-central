@@ -1,5 +1,6 @@
 
-import { apiService } from './apiService';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface CommunicationAnnouncement {
   id: string;
@@ -23,145 +24,255 @@ export interface CommunicationSettings {
   autoplay: boolean;
 }
 
-// Mock data pour fallback
-let mockAnnouncements: CommunicationAnnouncement[] = [
-  {
-    id: '1',
-    title: 'Réunion mensuelle équipe',
-    content: 'Réunion de présentation des résultats du mois et planification des objectifs.',
-    type: 'meeting',
-    imageUrl: '/placeholder.svg?height=200&width=400',
-    meetingDate: '2024-06-10T14:00:00Z',
-    meetingLocation: 'Salle de conférence A',
-    authorId: 'comm1',
-    authorName: 'Service Communication',
-    isActive: true,
-    priority: 1,
-    createdAt: '2024-06-01T09:00:00Z',
-    updatedAt: '2024-06-01T09:00:00Z'
-  },
-  {
-    id: '2',
-    title: 'Nouvelle politique de télétravail',
-    content: 'Mise en place de nouvelles règles pour le télétravail à partir du 15 juin.',
-    type: 'info',
-    imageUrl: '/placeholder.svg?height=200&width=400',
-    authorId: 'comm1',
-    authorName: 'Service Communication',
-    isActive: true,
-    priority: 2,
-    expirationDate: '2024-06-30',
-    createdAt: '2024-06-01T10:00:00Z',
-    updatedAt: '2024-06-01T10:00:00Z'
-  },
-  {
-    id: '3',
-    title: 'Succès du projet Alpha',
-    content: 'Félicitations à toute l\'équipe pour la réussite du projet Alpha livré en avance.',
-    type: 'news',
-    authorId: 'comm1',
-    authorName: 'Service Communication',
-    isActive: true,
-    priority: 3,
-    createdAt: '2024-06-01T11:00:00Z',
-    updatedAt: '2024-06-01T11:00:00Z'
-  }
-];
+type DbAnnouncement = Database['public']['Tables']['communication_announcements']['Row'];
+type DbSettings = Database['public']['Tables']['communication_settings']['Row'];
 
-let mockSettings: CommunicationSettings = {
-  carouselDuration: 15000, // 15 secondes
-  autoplay: true
-};
+// Fonction utilitaire pour convertir les données de la DB vers notre interface
+const mapDbAnnouncementToInterface = (dbAnnouncement: DbAnnouncement): CommunicationAnnouncement => ({
+  id: dbAnnouncement.id,
+  title: dbAnnouncement.title,
+  content: dbAnnouncement.content,
+  type: dbAnnouncement.type as CommunicationAnnouncement['type'],
+  imageUrl: dbAnnouncement.image_url || undefined,
+  meetingDate: dbAnnouncement.meeting_date || undefined,
+  meetingLocation: dbAnnouncement.meeting_location || undefined,
+  authorId: dbAnnouncement.author_id,
+  authorName: dbAnnouncement.author_name,
+  isActive: dbAnnouncement.is_active,
+  priority: dbAnnouncement.priority,
+  expirationDate: dbAnnouncement.expiration_date || undefined,
+  createdAt: dbAnnouncement.created_at,
+  updatedAt: dbAnnouncement.updated_at,
+});
+
+const mapDbSettingsToInterface = (dbSettings: DbSettings): CommunicationSettings => ({
+  carouselDuration: dbSettings.carousel_duration,
+  autoplay: dbSettings.autoplay,
+});
 
 export const communicationService = {
   async getActiveAnnouncements(): Promise<CommunicationAnnouncement[]> {
     try {
-      const announcements = await apiService.get<CommunicationAnnouncement[]>('/communications/announcements?active=true');
-      return announcements.sort((a, b) => a.priority - b.priority);
+      const { data, error } = await supabase
+        .from('communication_announcements')
+        .select('*')
+        .eq('is_active', true)
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching announcements:', error);
+        throw error;
+      }
+
+      return data.map(mapDbAnnouncementToInterface);
     } catch (error) {
-      console.log('Using mock data for announcements');
-      return mockAnnouncements.filter(a => a.isActive).sort((a, b) => a.priority - b.priority);
+      console.error('Error in getActiveAnnouncements:', error);
+      throw error;
+    }
+  },
+
+  async getAllAnnouncements(): Promise<CommunicationAnnouncement[]> {
+    try {
+      const { data, error } = await supabase
+        .from('communication_announcements')
+        .select('*')
+        .order('priority', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all announcements:', error);
+        throw error;
+      }
+
+      return data.map(mapDbAnnouncementToInterface);
+    } catch (error) {
+      console.error('Error in getAllAnnouncements:', error);
+      throw error;
     }
   },
 
   async createAnnouncement(announcement: Omit<CommunicationAnnouncement, 'id' | 'createdAt' | 'updatedAt'>): Promise<CommunicationAnnouncement> {
     try {
-      const newAnnouncement = await apiService.post<CommunicationAnnouncement>('/communications/announcements', announcement);
-      return newAnnouncement;
+      const { data, error } = await supabase
+        .from('communication_announcements')
+        .insert({
+          title: announcement.title,
+          content: announcement.content,
+          type: announcement.type,
+          image_url: announcement.imageUrl || null,
+          meeting_date: announcement.meetingDate || null,
+          meeting_location: announcement.meetingLocation || null,
+          author_id: announcement.authorId,
+          author_name: announcement.authorName,
+          is_active: announcement.isActive,
+          priority: announcement.priority,
+          expiration_date: announcement.expirationDate || null,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating announcement:', error);
+        throw error;
+      }
+
+      return mapDbAnnouncementToInterface(data);
     } catch (error) {
-      console.log('Using mock data for creating announcement');
-      
-      // Créer une nouvelle annonce avec des données mock
-      const newAnnouncement: CommunicationAnnouncement = {
-        ...announcement,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Ajouter à la liste mock
-      mockAnnouncements.push(newAnnouncement);
-      
-      return newAnnouncement;
+      console.error('Error in createAnnouncement:', error);
+      throw error;
     }
   },
 
   async updateAnnouncement(id: string, announcement: Partial<CommunicationAnnouncement>): Promise<CommunicationAnnouncement> {
     try {
-      const updatedAnnouncement = await apiService.put<CommunicationAnnouncement>(`/communications/announcements/${id}`, announcement);
-      return updatedAnnouncement;
-    } catch (error) {
-      console.log('Using mock data for updating announcement');
+      const updateData: any = {};
       
-      // Trouver et mettre à jour l'annonce dans les données mock
-      const index = mockAnnouncements.findIndex(a => a.id === id);
-      if (index !== -1) {
-        mockAnnouncements[index] = {
-          ...mockAnnouncements[index],
-          ...announcement,
-          updatedAt: new Date().toISOString()
-        };
-        return mockAnnouncements[index];
+      if (announcement.title !== undefined) updateData.title = announcement.title;
+      if (announcement.content !== undefined) updateData.content = announcement.content;
+      if (announcement.type !== undefined) updateData.type = announcement.type;
+      if (announcement.imageUrl !== undefined) updateData.image_url = announcement.imageUrl || null;
+      if (announcement.meetingDate !== undefined) updateData.meeting_date = announcement.meetingDate || null;
+      if (announcement.meetingLocation !== undefined) updateData.meeting_location = announcement.meetingLocation || null;
+      if (announcement.authorId !== undefined) updateData.author_id = announcement.authorId;
+      if (announcement.authorName !== undefined) updateData.author_name = announcement.authorName;
+      if (announcement.isActive !== undefined) updateData.is_active = announcement.isActive;
+      if (announcement.priority !== undefined) updateData.priority = announcement.priority;
+      if (announcement.expirationDate !== undefined) updateData.expiration_date = announcement.expirationDate || null;
+
+      const { data, error } = await supabase
+        .from('communication_announcements')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating announcement:', error);
+        throw error;
       }
-      
-      throw new Error('Annonce non trouvée');
+
+      return mapDbAnnouncementToInterface(data);
+    } catch (error) {
+      console.error('Error in updateAnnouncement:', error);
+      throw error;
     }
   },
 
   async deleteAnnouncement(id: string): Promise<void> {
     try {
-      await apiService.delete(`/communications/announcements/${id}`);
-    } catch (error) {
-      console.log('Using mock data for deleting announcement');
-      
-      // Supprimer de la liste mock
-      const index = mockAnnouncements.findIndex(a => a.id === id);
-      if (index !== -1) {
-        mockAnnouncements.splice(index, 1);
+      const { error } = await supabase
+        .from('communication_announcements')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting announcement:', error);
+        throw error;
       }
+    } catch (error) {
+      console.error('Error in deleteAnnouncement:', error);
+      throw error;
     }
   },
 
   async getCommunicationSettings(): Promise<CommunicationSettings> {
     try {
-      const settings = await apiService.get<CommunicationSettings>('/communications/settings');
-      return settings;
+      const { data, error } = await supabase
+        .from('communication_settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error fetching communication settings:', error);
+        throw error;
+      }
+
+      return mapDbSettingsToInterface(data);
     } catch (error) {
-      console.log('Using mock data for communication settings');
-      return mockSettings;
+      console.error('Error in getCommunicationSettings:', error);
+      throw error;
     }
   },
 
   async updateCommunicationSettings(settings: Partial<CommunicationSettings>): Promise<CommunicationSettings> {
     try {
-      const updatedSettings = await apiService.put<CommunicationSettings>('/communications/settings', settings);
-      return updatedSettings;
-    } catch (error) {
-      console.log('Using mock data for updating communication settings');
+      const updateData: any = {};
       
-      // Mettre à jour les paramètres mock
-      mockSettings = { ...mockSettings, ...settings };
-      return mockSettings;
+      if (settings.carouselDuration !== undefined) updateData.carousel_duration = settings.carouselDuration;
+      if (settings.autoplay !== undefined) updateData.autoplay = settings.autoplay;
+
+      const { data, error } = await supabase
+        .from('communication_settings')
+        .update(updateData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating communication settings:', error);
+        throw error;
+      }
+
+      return mapDbSettingsToInterface(data);
+    } catch (error) {
+      console.error('Error in updateCommunicationSettings:', error);
+      throw error;
     }
+  },
+
+  // Fonction pour écouter les changements en temps réel
+  subscribeToAnnouncements(callback: (announcements: CommunicationAnnouncement[]) => void) {
+    const channel = supabase
+      .channel('communication_announcements_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'communication_announcements'
+        },
+        async () => {
+          // Recharger toutes les annonces actives quand il y a un changement
+          try {
+            const announcements = await this.getActiveAnnouncements();
+            callback(announcements);
+          } catch (error) {
+            console.error('Error reloading announcements:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  },
+
+  subscribeToSettings(callback: (settings: CommunicationSettings) => void) {
+    const channel = supabase
+      .channel('communication_settings_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'communication_settings'
+        },
+        async () => {
+          // Recharger les paramètres quand il y a un changement
+          try {
+            const settings = await this.getCommunicationSettings();
+            callback(settings);
+          } catch (error) {
+            console.error('Error reloading settings:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }
 };
