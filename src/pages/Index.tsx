@@ -12,6 +12,7 @@ import OrganigrammePage from './OrganigrammePage';
 import ProfilePage from './ProfilePage';
 import SettingsPage from './SettingsPage';
 import DirectoryPage from './DirectoryPage';
+import CommunicationPage from './CommunicationPage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 import PublicPortal from '../components/portal/PublicPortal';
@@ -73,6 +74,12 @@ const AppContent = () => {
         return <OrganigrammePage />;
       case 'directory':
         return <DirectoryPage />;
+      case 'communication':
+        return (
+          <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
+            <CommunicationPage />
+          </React.Suspense>
+        );
       case 'salary':
         return (
           <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
