@@ -2,206 +2,196 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { communicationService, CommunicationAnnouncement, CommunicationSettings } from '../../services/communicationService';
-import { Calendar, MapPin, Clock, User, Plus, Edit, Trash2, Eye, EyeOff, Settings } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { Plus, Edit, Trash2, Calendar, MapPin, Settings, Save, Image, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { toast } from '@/hooks/use-toast';
-import ImageUpload from '../ui/image-upload';
-
-const announcementSchema = z.object({
-  title: z.string().min(1, { message: 'Le titre est requis' }),
-  content: z.string().min(1, { message: 'Le contenu est requis' }),
-  type: z.enum(['info', 'meeting', 'news', 'urgent']),
-  imageUrl: z.string().optional(),
-  meetingDate: z.string().optional(),
-  meetingLocation: z.string().optional(),
-  isActive: z.boolean(),
-  priority: z.number().min(1).max(10),
-  expirationDate: z.string().optional(),
-});
-
-const settingsSchema = z.object({
-  carouselDuration: z.number().min(3000).max(60000),
-  autoplay: z.boolean(),
-});
-
-type AnnouncementFormData = z.infer<typeof announcementSchema>;
-type SettingsFormData = z.infer<typeof settingsSchema>;
+import { toast } from 'sonner';
 
 const AnnouncementManager = () => {
+  const { user } = useAuth();
   const [announcements, setAnnouncements] = useState<CommunicationAnnouncement[]>([]);
   const [settings, setSettings] = useState<CommunicationSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingAnnouncement, setEditingAnnouncement] = useState<CommunicationAnnouncement | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const form = useForm<AnnouncementFormData>({
-    resolver: zodResolver(announcementSchema),
-    defaultValues: {
-      title: '',
-      content: '',
-      type: 'info',
-      imageUrl: '',
-      meetingDate: '',
-      meetingLocation: '',
-      isActive: true,
-      priority: 1,
-      expirationDate: '',
-    },
+  // États du formulaire
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    type: 'info' as CommunicationAnnouncement['type'],
+    imageUrl: '',
+    meetingDate: '',
+    meetingLocation: '',
+    priority: 1,
+    isActive: true,
+    expirationDate: ''
   });
 
-  const settingsForm = useForm<SettingsFormData>({
-    resolver: zodResolver(settingsSchema),
-    defaultValues: {
-      carouselDuration: 20000,
-      autoplay: true,
-    },
+  // États pour les paramètres
+  const [settingsData, setSettingsData] = useState({
+    carouselDuration: 20000,
+    autoplay: true
   });
 
   useEffect(() => {
     loadData();
-
-    // S'abonner aux changements en temps réel
-    const unsubscribeAnnouncements = communicationService.subscribeToAnnouncements(setAnnouncements);
-    const unsubscribeSettings = communicationService.subscribeToSettings(setSettings);
-
-    return () => {
-      unsubscribeAnnouncements();
-      unsubscribeSettings();
-    };
   }, []);
+
+  useEffect(() => {
+    if (settings) {
+      setSettingsData({
+        carouselDuration: settings.carouselDuration,
+        autoplay: settings.autoplay
+      });
+    }
+  }, [settings]);
 
   const loadData = async () => {
     try {
-      setLoading(true);
       const [announcementsData, settingsData] = await Promise.all([
         communicationService.getAllAnnouncements(),
         communicationService.getCommunicationSettings()
       ]);
       setAnnouncements(announcementsData);
       setSettings(settingsData);
-      settingsForm.reset(settingsData);
     } catch (error) {
       console.error('Error loading data:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les données.",
-        variant: "destructive",
-      });
+      toast.error('Erreur lors du chargement des données');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (data: AnnouncementFormData) => {
-    try {
-      const announcementData = {
-        title: data.title,
-        content: data.content,
-        type: data.type,
-        isActive: data.isActive,
-        priority: data.priority,
-        authorId: 'admin',
-        authorName: 'Administrateur',
-        meetingDate: data.meetingDate || undefined,
-        meetingLocation: data.meetingLocation || undefined,
-        imageUrl: data.imageUrl || undefined,
-        expirationDate: data.expirationDate || undefined,
-      };
-
-      if (editingAnnouncement) {
-        await communicationService.updateAnnouncement(editingAnnouncement.id, announcementData);
-        toast({
-          title: "Annonce mise à jour",
-          description: "L'annonce a été mise à jour avec succès.",
-        });
-      } else {
-        await communicationService.createAnnouncement(announcementData);
-        toast({
-          title: "Annonce créée",
-          description: "L'annonce a été créée avec succès.",
-        });
-      }
-
-      setDialogOpen(false);
-      setEditingAnnouncement(null);
-      form.reset();
-      loadData();
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: editingAnnouncement ? "Impossible de mettre à jour l'annonce." : "Impossible de créer l'annonce.",
-        variant: "destructive",
-      });
-      console.error(error);
-    }
-  };
-
-  const handleSettingsSubmit = async (data: SettingsFormData) => {
-    try {
-      await communicationService.updateCommunicationSettings(data);
-      setSettings({ ...settings!, ...data });
-      toast({
-        title: "Paramètres mis à jour",
-        description: "Les paramètres du carrousel ont été mis à jour.",
-      });
-      setSettingsDialogOpen(false);
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour les paramètres.",
-        variant: "destructive",
-      });
-      console.error(error);
-    }
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      content: '',
+      type: 'info',
+      imageUrl: '',
+      meetingDate: '',
+      meetingLocation: '',
+      priority: 1,
+      isActive: true,
+      expirationDate: ''
+    });
+    setEditingAnnouncement(null);
   };
 
   const handleEdit = (announcement: CommunicationAnnouncement) => {
-    setEditingAnnouncement(announcement);
-    form.reset({
+    setFormData({
       title: announcement.title,
       content: announcement.content,
       type: announcement.type,
       imageUrl: announcement.imageUrl || '',
       meetingDate: announcement.meetingDate || '',
       meetingLocation: announcement.meetingLocation || '',
-      isActive: announcement.isActive,
       priority: announcement.priority,
-      expirationDate: announcement.expirationDate || '',
+      isActive: announcement.isActive,
+      expirationDate: announcement.expirationDate || ''
     });
-    setDialogOpen(true);
+    setEditingAnnouncement(announcement);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast.error('Vous devez être connecté pour effectuer cette action');
+      return;
+    }
+
+    try {
+      const announcementData = {
+        ...formData,
+        authorId: user.id,
+        authorName: user.name,
+        imageUrl: formData.imageUrl || undefined,
+        meetingDate: formData.meetingDate || undefined,
+        meetingLocation: formData.meetingLocation || undefined,
+        expirationDate: formData.expirationDate || undefined
+      };
+
+      if (editingAnnouncement) {
+        await communicationService.updateAnnouncement(editingAnnouncement.id, announcementData);
+        toast.success('Annonce mise à jour avec succès');
+      } else {
+        await communicationService.createAnnouncement(announcementData);
+        toast.success('Annonce créée avec succès');
+      }
+
+      await loadData();
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving announcement:', error);
+      toast.error('Erreur lors de l\'enregistrement de l\'annonce');
+    }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
-      try {
-        await communicationService.deleteAnnouncement(id);
-        toast({
-          title: "Annonce supprimée",
-          description: "L'annonce a été supprimée avec succès.",
-        });
-        loadData();
-      } catch (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de supprimer l'annonce.",
-          variant: "destructive",
-        });
-        console.error(error);
-      }
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
+      return;
+    }
+
+    try {
+      await communicationService.deleteAnnouncement(id);
+      toast.success('Annonce supprimée avec succès');
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      toast.error('Erreur lors de la suppression de l\'annonce');
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Vérification du type de fichier
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Format d\'image non supporté. Utilisez JPEG, PNG, WebP ou GIF');
+      return;
+    }
+
+    // Vérification de la taille (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('L\'image est trop volumineuse. Taille maximum : 5MB');
+      return;
+    }
+
+    // Conversion en base64 pour stockage temporaire
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setFormData(prev => ({ ...prev, imageUrl: result }));
+      toast.success('Image uploadée avec succès');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSettingsUpdate = async () => {
+    try {
+      await communicationService.updateCommunicationSettings(settingsData);
+      setSettings(settingsData);
+      toast.success('Paramètres mis à jour avec succès');
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      toast.error('Erreur lors de la mise à jour des paramètres');
     }
   };
 
@@ -225,375 +215,281 @@ const AnnouncementManager = () => {
     }
   };
 
+  if (isLoading) {
+    return <div className="p-6">Chargement...</div>;
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-medium">Gestion des annonces</h3>
-          <p className="text-sm text-gray-500">Gérez les annonces qui s'affichent dans le carrousel de communication</p>
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Paramètres carrousel
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Paramètres du carrousel</DialogTitle>
-                <DialogDescription>
-                  Configurez le comportement du carrousel d'annonces
-                </DialogDescription>
-              </DialogHeader>
-              
-              <Form {...settingsForm}>
-                <form onSubmit={settingsForm.handleSubmit(handleSettingsSubmit)} className="space-y-4">
-                  <FormField
-                    control={settingsForm.control}
-                    name="carouselDuration"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Durée d'affichage (millisecondes)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min="3000" 
-                            max="60000" 
-                            step="1000"
-                            {...field} 
-                            onChange={e => field.onChange(parseInt(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Entre 3 et 60 secondes (3000 - 60000ms)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={settingsForm.control}
-                    name="autoplay"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Lecture automatique</FormLabel>
-                          <FormDescription>
-                            Activer le défilement automatique du carrousel
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setSettingsDialogOpen(false)}>
-                      Annuler
-                    </Button>
-                    <Button type="submit">
-                      Sauvegarder
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+      <Tabs defaultValue="announcements" className="w-full">
+        <TabsList>
+          <TabsTrigger value="announcements">Annonces</TabsTrigger>
+          <TabsTrigger value="settings">Paramètres du carrousel</TabsTrigger>
+        </TabsList>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingAnnouncement(null);
-                form.reset();
-              }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvelle annonce
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingAnnouncement ? 'Modifier l\'annonce' : 'Nouvelle annonce'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingAnnouncement ? 'Modifiez les informations de l\'annonce.' : 'Créez une nouvelle annonce pour le carrousel de communication.'}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Titre</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contenu</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} rows={3} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="info">Information</SelectItem>
-                              <SelectItem value="meeting">Réunion</SelectItem>
-                              <SelectItem value="news">Actualité</SelectItem>
-                              <SelectItem value="urgent">Urgent</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Priorité (1-10)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              min="1" 
-                              max="10" 
-                              {...field} 
-                              onChange={e => field.onChange(parseInt(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+        <TabsContent value="announcements" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Gestion des annonces</h2>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouvelle annonce
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingAnnouncement ? 'Modifier l\'annonce' : 'Créer une nouvelle annonce'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">Titre *</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      required
                     />
                   </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="imageUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image (optionnel)</FormLabel>
-                        <FormControl>
-                          <ImageUpload
-                            onImageChange={(imageUrl) => field.onChange(imageUrl || '')}
-                            currentImage={field.value}
-                            maxSizeInMB={5}
-                            acceptedFormats={['image/jpeg', 'image/png', 'image/webp', 'image/gif']}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Formats acceptés: JPEG, PNG, WebP, GIF • Taille max: 5MB • Dimensions recommandées: 1200x600px
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {form.watch('type') === 'meeting' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="meetingDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date de la réunion</FormLabel>
-                            <FormControl>
-                              <Input type="datetime-local" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="meetingLocation"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Lieu de la réunion</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+
+                  <div>
+                    <Label htmlFor="content">Contenu *</Label>
+                    <Textarea
+                      id="content"
+                      value={formData.content}
+                      onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="type">Type d'annonce</Label>
+                      <Select value={formData.type} onValueChange={(value: CommunicationAnnouncement['type']) => 
+                        setFormData(prev => ({ ...prev, type: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="info">Information</SelectItem>
+                          <SelectItem value="meeting">Réunion</SelectItem>
+                          <SelectItem value="news">Actualité</SelectItem>
+                          <SelectItem value="urgent">Urgent</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="priority">Priorité (1-10)</Label>
+                      <Input
+                        id="priority"
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={formData.priority}
+                        onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
                       />
                     </div>
-                  )}
-                  
-                  <FormField
-                    control={form.control}
-                    name="expirationDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date d'expiration (optionnel)</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          L'annonce ne sera plus affichée après cette date
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="isActive"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Annonce active</FormLabel>
-                          <FormDescription>
-                            L'annonce sera affichée dans le carrousel
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="image">Image</Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={handleImageUpload}
+                      />
+                      <p className="text-sm text-gray-500">
+                        Formats acceptés : JPEG, PNG, WebP, GIF. Taille maximum : 5MB
+                      </p>
+                      {formData.imageUrl && (
+                        <div className="mt-2">
+                          <img
+                            src={formData.imageUrl}
+                            alt="Aperçu"
+                            className="w-32 h-32 object-cover rounded-lg"
                           />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {formData.type === 'meeting' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="meetingDate">Date de la réunion</Label>
+                        <Input
+                          id="meetingDate"
+                          type="datetime-local"
+                          value={formData.meetingDate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, meetingDate: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="meetingLocation">Lieu de la réunion</Label>
+                        <Input
+                          id="meetingLocation"
+                          value={formData.meetingLocation}
+                          onChange={(e) => setFormData(prev => ({ ...prev, meetingLocation: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="expirationDate">Date d'expiration (optionnelle)</Label>
+                    <Input
+                      id="expirationDate"
+                      type="date"
+                      value={formData.expirationDate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, expirationDate: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isActive"
+                      checked={formData.isActive}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                    />
+                    <Label htmlFor="isActive">Annonce active</Label>
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                       Annuler
                     </Button>
                     <Button type="submit">
+                      <Save className="h-4 w-4 mr-2" />
                       {editingAnnouncement ? 'Mettre à jour' : 'Créer'}
                     </Button>
                   </div>
                 </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+              </DialogContent>
+            </Dialog>
+          </div>
 
-      <div className="grid gap-4">
-        {loading ? (
-          <div className="text-center py-8">Chargement...</div>
-        ) : announcements.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <p className="text-gray-500">Aucune annonce trouvée</p>
-            </CardContent>
-          </Card>
-        ) : (
-          announcements.map((announcement) => (
-            <Card key={announcement.id}>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={getTypeColor(announcement.type)}>
-                        {getTypeLabel(announcement.type)}
-                      </Badge>
-                      <Badge variant={announcement.isActive ? "default" : "secondary"}>
-                        {announcement.isActive ? <Eye className="h-3 w-3 mr-1" /> : <EyeOff className="h-3 w-3 mr-1" />}
-                        {announcement.isActive ? 'Actif' : 'Inactif'}
-                      </Badge>
-                      <span className="text-xs text-gray-500">Priorité: {announcement.priority}</span>
-                    </div>
-                    
-                    <h4 className="font-medium mb-1">{announcement.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{announcement.content}</p>
-                    
-                    {announcement.type === 'meeting' && announcement.meetingDate && (
-                      <div className="flex gap-4 text-xs text-gray-500 mb-2">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(announcement.meetingDate), 'PPP à HH:mm', { locale: fr })}
-                        </div>
-                        {announcement.meetingLocation && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {announcement.meetingLocation}
-                          </div>
+          <div className="grid gap-4">
+            {announcements.map((announcement) => (
+              <Card key={announcement.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg">{announcement.title}</CardTitle>
+                        <Badge variant={getTypeColor(announcement.type)}>
+                          {getTypeLabel(announcement.type)}
+                        </Badge>
+                        {!announcement.isActive && (
+                          <Badge variant="secondary">Inactive</Badge>
                         )}
                       </div>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {announcement.authorName}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(announcement.createdAt), 'PPP', { locale: fr })}
-                      </div>
-                      {announcement.expirationDate && (
-                        <div className="text-orange-600">
-                          Expire le {format(new Date(announcement.expirationDate), 'PPP', { locale: fr })}
+                      <CardDescription>{announcement.content}</CardDescription>
+                      {announcement.type === 'meeting' && announcement.meetingDate && (
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {format(new Date(announcement.meetingDate), 'PPP à HH:mm', { locale: fr })}
+                          </div>
+                          {announcement.meetingLocation && (
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              {announcement.meetingLocation}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(announcement)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(announcement.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleEdit(announcement)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleDelete(announcement.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                </CardHeader>
+                {announcement.imageUrl && (
+                  <CardContent>
+                    <img
+                      src={announcement.imageUrl}
+                      alt={announcement.title}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                  </CardContent>
+                )}
+              </Card>
+            ))}
+            {announcements.length === 0 && (
+              <Card>
+                <CardContent className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Aucune annonce créée pour le moment</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Paramètres du carrousel
+              </CardTitle>
+              <CardDescription>
+                Configurez le comportement du carrousel d'annonces
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <Label>Durée d'affichage : {settingsData.carouselDuration / 1000} secondes</Label>
+                <Slider
+                  value={[settingsData.carouselDuration]}
+                  onValueChange={([value]) => setSettingsData(prev => ({ ...prev, carouselDuration: value }))}
+                  min={3000}
+                  max={60000}
+                  step={1000}
+                  className="mt-2"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Durée d'affichage de chaque annonce (3 à 60 secondes)
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="autoplay"
+                  checked={settingsData.autoplay}
+                  onCheckedChange={(checked) => setSettingsData(prev => ({ ...prev, autoplay: checked }))}
+                />
+                <Label htmlFor="autoplay">Lecture automatique</Label>
+              </div>
+
+              <Button onClick={handleSettingsUpdate}>
+                <Save className="h-4 w-4 mr-2" />
+                Sauvegarder les paramètres
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
