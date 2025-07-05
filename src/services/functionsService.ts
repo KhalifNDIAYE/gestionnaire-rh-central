@@ -1,145 +1,132 @@
 
-interface JobFunction {
-  id: string;
-  title: string;
-  department: string;
-  description: string;
-  level: 'junior' | 'intermediate' | 'senior' | 'expert';
-  permissions: string[];
-  status: 'active' | 'inactive';
-  createdAt: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-const FUNCTIONS_STORAGE_KEY = 'hr_functions';
-
-// Données mock initiales
-const mockFunctions: JobFunction[] = [
-  {
-    id: '1',
-    title: 'Développeur Full Stack',
-    department: 'IT',
-    description: 'Développement d\'applications web complètes (frontend et backend)',
-    level: 'senior',
-    permissions: ['time-tracking', 'leave-requests', 'payroll', 'profile'],
-    status: 'active',
-    createdAt: '2024-01-15'
-  },
-  {
-    id: '2',
-    title: 'Responsable RH',
-    department: 'RH',
-    description: 'Gestion des ressources humaines et du personnel',
-    level: 'expert',
-    permissions: ['employees', 'leave-requests', 'payroll', 'departments', 'time-tracking', 'profile'],
-    status: 'active',
-    createdAt: '2024-01-10'
-  },
-  {
-    id: '3',
-    title: 'Chef de Département',
-    department: 'Finance',
-    description: 'Direction et coordination des activités du département',
-    level: 'expert',
-    permissions: ['leave-requests', 'payroll', 'salary', 'profile'],
-    status: 'active',
-    createdAt: '2024-01-08'
-  },
-  {
-    id: '4',
-    title: 'Analyste Financier',
-    department: 'Finance',
-    description: 'Analyse des données financières et reporting',
-    level: 'intermediate',
-    permissions: ['payroll', 'profile'],
-    status: 'active',
-    createdAt: '2024-01-05'
-  }
-];
+export type JobFunction = Tables<'job_functions'>;
+export type CreateJobFunctionData = TablesInsert<'job_functions'>;
+export type UpdateJobFunctionData = TablesUpdate<'job_functions'>;
 
 class FunctionsService {
-  private getFunctions(): JobFunction[] {
-    const stored = localStorage.getItem(FUNCTIONS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    // Initialiser avec les données mock si pas de données stockées
-    this.saveFunctions(mockFunctions);
-    return mockFunctions;
-  }
-
-  private saveFunctions(functions: JobFunction[]): void {
-    localStorage.setItem(FUNCTIONS_STORAGE_KEY, JSON.stringify(functions));
-  }
-
-  private generateId(): string {
-    return 'func_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-
   async getAllFunctions(): Promise<JobFunction[]> {
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return this.getFunctions();
-  }
-
-  async createFunction(functionData: Omit<JobFunction, 'id'>): Promise<JobFunction> {
-    console.log('Creating function:', functionData);
+    console.log('Fetching job functions from Supabase...');
     
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 200));
+    const { data, error } = await supabase
+      .from('job_functions')
+      .select('*')
+      .order('created_at', { ascending: false });
     
-    const functions = this.getFunctions();
-    const newFunction: JobFunction = {
-      ...functionData,
-      id: this.generateId(),
-    };
-    
-    functions.push(newFunction);
-    this.saveFunctions(functions);
-    
-    console.log('Function created successfully:', newFunction);
-    return newFunction;
-  }
-
-  async updateFunction(id: string, functionData: Partial<JobFunction>): Promise<JobFunction> {
-    console.log('Updating function:', id, functionData);
-    
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    const functions = this.getFunctions();
-    const index = functions.findIndex(func => func.id === id);
-    
-    if (index === -1) {
-      throw new Error('Fonction introuvable');
+    if (error) {
+      console.error('Error fetching job functions:', error);
+      throw new Error(`Erreur lors du chargement des fonctions: ${error.message}`);
     }
     
-    const updatedFunction = { ...functions[index], ...functionData };
-    functions[index] = updatedFunction;
-    this.saveFunctions(functions);
+    console.log('Job functions fetched successfully:', data?.length);
+    return data || [];
+  }
+
+  async createFunction(functionData: Omit<CreateJobFunctionData, 'id' | 'created_at' | 'updated_at'>): Promise<JobFunction> {
+    console.log('Creating job function:', functionData);
     
-    console.log('Function updated successfully:', updatedFunction);
-    return updatedFunction;
+    const { data, error } = await supabase
+      .from('job_functions')
+      .insert(functionData)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating job function:', error);
+      throw new Error(`Erreur lors de la création de la fonction: ${error.message}`);
+    }
+    
+    console.log('Job function created successfully:', data);
+    return data;
+  }
+
+  async updateFunction(id: string, functionData: UpdateJobFunctionData): Promise<JobFunction> {
+    console.log('Updating job function:', id, functionData);
+    
+    const { data, error } = await supabase
+      .from('job_functions')
+      .update(functionData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating job function:', error);
+      throw new Error(`Erreur lors de la mise à jour de la fonction: ${error.message}`);
+    }
+    
+    console.log('Job function updated successfully:', data);
+    return data;
   }
 
   async deleteFunction(id: string): Promise<void> {
-    console.log('Deleting function:', id);
+    console.log('Deleting job function:', id);
     
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 200));
+    const { error } = await supabase
+      .from('job_functions')
+      .delete()
+      .eq('id', id);
     
-    const functions = this.getFunctions();
-    const index = functions.findIndex(func => func.id === id);
-    
-    if (index === -1) {
-      throw new Error('Fonction introuvable');
+    if (error) {
+      console.error('Error deleting job function:', error);
+      throw new Error(`Erreur lors de la suppression de la fonction: ${error.message}`);
     }
     
-    functions.splice(index, 1);
-    this.saveFunctions(functions);
+    console.log('Job function deleted successfully');
+  }
+
+  async getFunctionById(id: string): Promise<JobFunction | null> {
+    console.log('Fetching job function by ID:', id);
     
-    console.log('Function deleted successfully');
+    const { data, error } = await supabase
+      .from('job_functions')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching job function by ID:', error);
+      throw new Error(`Erreur lors de la récupération de la fonction: ${error.message}`);
+    }
+    
+    return data;
+  }
+
+  async getFunctionsByDepartment(department: string): Promise<JobFunction[]> {
+    console.log('Fetching job functions by department:', department);
+    
+    const { data, error } = await supabase
+      .from('job_functions')
+      .select('*')
+      .eq('department', department)
+      .order('title');
+    
+    if (error) {
+      console.error('Error fetching job functions by department:', error);
+      throw new Error(`Erreur lors de la récupération des fonctions par département: ${error.message}`);
+    }
+    
+    return data || [];
+  }
+
+  async getFunctionsByStatus(status: 'active' | 'inactive'): Promise<JobFunction[]> {
+    console.log('Fetching job functions by status:', status);
+    
+    const { data, error } = await supabase
+      .from('job_functions')
+      .select('*')
+      .eq('status', status)
+      .order('title');
+    
+    if (error) {
+      console.error('Error fetching job functions by status:', error);
+      throw new Error(`Erreur lors de la récupération des fonctions par statut: ${error.message}`);
+    }
+    
+    return data || [];
   }
 }
 
 export const functionsService = new FunctionsService();
-export type { JobFunction };

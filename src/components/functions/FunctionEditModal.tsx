@@ -28,7 +28,6 @@ const FunctionEditModal = ({
   const { toast } = useToast();
   const form = useForm();
 
-  // Pré-remplir le formulaire quand la fonction change
   useEffect(() => {
     if (jobFunction) {
       form.reset({

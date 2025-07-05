@@ -1,40 +1,25 @@
 
-import { useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { employeeService, Employee } from '../../services/employeeService';
+import { Employee, employeeService } from '../../services/employeeService';
+import { useEffect } from 'react';
 
 interface EmployeeEditModalProps {
   employee: Employee | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEmployeeUpdated: () => void;
-  mockFonctions: string[];
 }
 
-const EmployeeEditModal = ({ 
-  employee, 
-  open, 
-  onOpenChange, 
-  onEmployeeUpdated, 
-  mockFonctions 
-}: EmployeeEditModalProps) => {
-  const { user } = useAuth();
+const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: EmployeeEditModalProps) => {
   const { toast } = useToast();
   const form = useForm();
 
-  const isAdmin = user?.role === 'admin';
-  const isRH = user?.role === 'rh';
-  const isOwnProfile = user?.id === employee?.id;
-  const canModifyAll = isAdmin || isRH;
-
-  // Pré-remplir le formulaire quand l'employé change
   useEffect(() => {
     if (employee) {
       form.reset({
@@ -43,10 +28,12 @@ const EmployeeEditModal = ({
         fonction: employee.fonction,
         department: employee.department,
         status: employee.status,
+        start_date: employee.start_date,
         salary: employee.salary,
-        hourlyRate: employee.hourlyRate,
+        type: employee.type,
+        end_date: employee.end_date,
+        hourly_rate: employee.hourly_rate,
         company: employee.company,
-        endDate: employee.endDate,
       });
     }
   }, [employee, form]);
@@ -58,7 +45,7 @@ const EmployeeEditModal = ({
       await employeeService.updateEmployee(employee.id, data);
       toast({
         title: "Succès",
-        description: isOwnProfile ? "Profil modifié avec succès" : "Employé modifié avec succès",
+        description: "Agent modifié avec succès",
       });
       onOpenChange(false);
       onEmployeeUpdated();
@@ -67,220 +54,221 @@ const EmployeeEditModal = ({
       console.error('Erreur lors de la modification:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de modifier les informations",
+        description: "Impossible de modifier l'agent",
         variant: "destructive",
       });
     }
   };
 
-  if (!employee) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
-            {isOwnProfile ? 'Modifier mon profil' : 'Modifier l\'employé'}
-          </DialogTitle>
+          <DialogTitle>Modifier l'agent</DialogTitle>
           <DialogDescription>
-            {isOwnProfile 
-              ? 'Modifier vos informations personnelles'
-              : 'Modifier les informations de l\'employé'
-            }
+            Modifier les informations de l'agent
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nom complet</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Jean Dupont" 
-                      {...field} 
-                      disabled={!isOwnProfile && !canModifyAll}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="jean.dupont@cse.sn" 
-                      {...field} 
-                      disabled={!isOwnProfile && !canModifyAll}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {canModifyAll && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="fonction"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fonction</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une fonction" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {mockFonctions.map((fonction) => (
-                            <SelectItem key={fonction} value={fonction}>
-                              {fonction}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Département</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner un département" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="IT">IT</SelectItem>
-                          <SelectItem value="Finance">Finance</SelectItem>
-                          <SelectItem value="HR">RH</SelectItem>
-                          <SelectItem value="Marketing">Marketing</SelectItem>
-                          <SelectItem value="Operations">Opérations</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Statut</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner le statut" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Actif</SelectItem>
-                          <SelectItem value="inactive">Inactif</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {employee.type === 'employee' && (
-                  <FormField
-                    control={form.control}
-                    name="salary"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Salaire annuel (€)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="45000" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                rules={{ required: 'Le nom est requis' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom complet</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Jean Dupont" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-
-                {employee.type === 'consultant' && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="hourlyRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tarif horaire (€)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="120" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="company"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Société de conseil</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="TechConsult SARL" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="endDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date de fin de mission</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="date" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                rules={{ 
+                  required: 'L\'email est requis',
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: 'Email invalide'
+                  }
+                }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Ex: jean.dupont@company.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </>
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="fonction"
+                rules={{ required: 'La fonction est requise' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fonction</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Développeur Full Stack" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="department"
+                rules={{ required: 'Le département est requis' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Département</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: IT, RH, Finance..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Statut</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le statut" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Actif</SelectItem>
+                        <SelectItem value="inactive">Inactif</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="employee">Employé</SelectItem>
+                        <SelectItem value="consultant">Consultant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="start_date"
+                rules={{ required: 'La date de début est requise' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date de début</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {form.watch('type') === 'employee' ? (
+              <FormField
+                control={form.control}
+                name="salary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Salaire (€)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Ex: 45000" 
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="hourly_rate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Taux horaire (€)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="Ex: 120.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="end_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date de fin</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Société</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: TechConsult SARL" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
 
             <Button type="submit" className="w-full">
-              {isOwnProfile ? 'Sauvegarder mon profil' : 'Sauvegarder les modifications'}
+              Sauvegarder les modifications
             </Button>
           </form>
         </Form>

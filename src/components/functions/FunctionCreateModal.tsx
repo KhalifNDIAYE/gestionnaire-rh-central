@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -28,8 +29,7 @@ const FunctionCreateModal = ({ onFunctionCreated, availablePermissions }: Functi
         description: data.description,
         level: data.level,
         permissions: data.permissions || [],
-        status: 'active' as const,
-        createdAt: new Date().toISOString().split('T')[0]
+        status: 'active' as const
       };
 
       await functionsService.createFunction(newFunction);

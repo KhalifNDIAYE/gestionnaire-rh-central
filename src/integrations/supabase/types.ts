@@ -132,6 +132,42 @@ export type Database = {
         }
         Relationships: []
       }
+      job_functions: {
+        Row: {
+          created_at: string
+          department: string
+          description: string
+          id: string
+          level: string
+          permissions: string[]
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          description: string
+          id?: string
+          level?: string
+          permissions?: string[]
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          description?: string
+          id?: string
+          level?: string
+          permissions?: string[]
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       memorandums: {
         Row: {
           author_id: string
