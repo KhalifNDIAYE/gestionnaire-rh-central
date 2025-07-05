@@ -1,115 +1,149 @@
 
-interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  fonction: string;
-  department: string;
-  status: 'active' | 'inactive';
-  startDate: string;
-  salary: number;
-  type: 'employee' | 'consultant';
-  endDate?: string;
-  hourlyRate?: number;
-  company?: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-const EMPLOYEES_STORAGE_KEY = 'hr_employees';
-
-// Données mock initiales
-const mockEmployees: Employee[] = [
-  { id: '1', name: 'Jean Dupont', email: 'jean.dupont@company.com', fonction: 'Développeur Full Stack', department: 'IT', status: 'active', startDate: '2023-01-15', salary: 45000, type: 'employee' },
-  { id: '2', name: 'Marie Martin', email: 'marie.martin@company.com', fonction: 'Analyste Financier', department: 'Finance', status: 'active', startDate: '2022-08-10', salary: 50000, type: 'employee' },
-  { id: '3', name: 'Paul Bernard', email: 'paul.bernard@company.com', fonction: 'Chef de Département RH', department: 'HR', status: 'active', startDate: '2021-03-20', salary: 60000, type: 'employee' },
-  { id: '4', name: 'Sophie Durand', email: 'sophie.durand@company.com', fonction: 'Chargée de Communication', department: 'Marketing', status: 'inactive', startDate: '2020-11-05', salary: 48000, type: 'employee' },
-  { id: 'consultant-1', name: 'Marc Consultant', email: 'marc@consultingfirm.com', fonction: 'Consultant ERP', department: 'IT', status: 'active', startDate: '2024-01-15', salary: 0, type: 'consultant', endDate: '2024-06-30', hourlyRate: 120, company: 'TechConsult SARL' },
-  { id: 'consultant-2', name: 'Julie Expert', email: 'julie@webagency.com', fonction: 'Consultant Web', department: 'Marketing', status: 'active', startDate: '2024-03-01', salary: 0, type: 'consultant', endDate: '2024-05-31', hourlyRate: 95, company: 'WebDesign Pro' },
-];
+export type Employee = Tables<'employees'>;
+export type CreateEmployeeData = TablesInsert<'employees'>;
+export type UpdateEmployeeData = TablesUpdate<'employees'>;
 
 class EmployeeService {
-  private getEmployees(): Employee[] {
-    const stored = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    // Initialiser avec les données mock si pas de données stockées
-    this.saveEmployees(mockEmployees);
-    return mockEmployees;
-  }
-
-  private saveEmployees(employees: Employee[]): void {
-    localStorage.setItem(EMPLOYEES_STORAGE_KEY, JSON.stringify(employees));
-  }
-
-  private generateId(): string {
-    return 'emp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-
   async getAllEmployees(): Promise<Employee[]> {
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return this.getEmployees();
+    console.log('Fetching employees from Supabase...');
+    
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching employees:', error);
+      throw new Error(`Erreur lors du chargement des employés: ${error.message}`);
+    }
+    
+    console.log('Employees fetched successfully:', data?.length);
+    return data || [];
   }
 
-  async createEmployee(employeeData: Omit<Employee, 'id'>): Promise<Employee> {
+  async createEmployee(employeeData: CreateEmployeeData): Promise<Employee> {
     console.log('Creating employee:', employeeData);
     
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 200));
+    const { data, error } = await supabase
+      .from('employees')
+      .insert(employeeData)
+      .select()
+      .single();
     
-    const employees = this.getEmployees();
-    const newEmployee: Employee = {
-      ...employeeData,
-      id: this.generateId(),
-    };
-    
-    employees.push(newEmployee);
-    this.saveEmployees(employees);
-    
-    console.log('Employee created successfully:', newEmployee);
-    return newEmployee;
-  }
-
-  async updateEmployee(id: string, employeeData: Partial<Employee>): Promise<Employee> {
-    console.log('Updating employee:', id, employeeData);
-    
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    const employees = this.getEmployees();
-    const index = employees.findIndex(emp => emp.id === id);
-    
-    if (index === -1) {
-      throw new Error('Employé introuvable');
+    if (error) {
+      console.error('Error creating employee:', error);
+      throw new Error(`Erreur lors de la création de l'employé: ${error.message}`);
     }
     
-    const updatedEmployee = { ...employees[index], ...employeeData };
-    employees[index] = updatedEmployee;
-    this.saveEmployees(employees);
+    console.log('Employee created successfully:', data);
+    return data;
+  }
+
+  async updateEmployee(id: string, employeeData: UpdateEmployeeData): Promise<Employee> {
+    console.log('Updating employee:', id, employeeData);
     
-    console.log('Employee updated successfully:', updatedEmployee);
-    return updatedEmployee;
+    const { data, error } = await supabase
+      .from('employees')
+      .update(employeeData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating employee:', error);
+      throw new Error(`Erreur lors de la mise à jour de l'employé: ${error.message}`);
+    }
+    
+    console.log('Employee updated successfully:', data);
+    return data;
   }
 
   async deleteEmployee(id: string): Promise<void> {
     console.log('Deleting employee:', id);
     
-    // Simuler un délai API
-    await new Promise(resolve => setTimeout(resolve, 200));
+    const { error } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', id);
     
-    const employees = this.getEmployees();
-    const index = employees.findIndex(emp => emp.id === id);
-    
-    if (index === -1) {
-      throw new Error('Employé introuvable');
+    if (error) {
+      console.error('Error deleting employee:', error);
+      throw new Error(`Erreur lors de la suppression de l'employé: ${error.message}`);
     }
     
-    employees.splice(index, 1);
-    this.saveEmployees(employees);
-    
     console.log('Employee deleted successfully');
+  }
+
+  async getEmployeeById(id: string): Promise<Employee | null> {
+    console.log('Fetching employee by ID:', id);
+    
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching employee by ID:', error);
+      throw new Error(`Erreur lors de la récupération de l'employé: ${error.message}`);
+    }
+    
+    return data;
+  }
+
+  async getEmployeesByDepartment(department: string): Promise<Employee[]> {
+    console.log('Fetching employees by department:', department);
+    
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('department', department)
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching employees by department:', error);
+      throw new Error(`Erreur lors de la récupération des employés par département: ${error.message}`);
+    }
+    
+    return data || [];
+  }
+
+  async getEmployeesByStatus(status: 'active' | 'inactive'): Promise<Employee[]> {
+    console.log('Fetching employees by status:', status);
+    
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('status', status)
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching employees by status:', error);
+      throw new Error(`Erreur lors de la récupération des employés par statut: ${error.message}`);
+    }
+    
+    return data || [];
+  }
+
+  async getEmployeesByType(type: 'employee' | 'consultant'): Promise<Employee[]> {
+    console.log('Fetching employees by type:', type);
+    
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('type', type)
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching employees by type:', error);
+      throw new Error(`Erreur lors de la récupération des employés par type: ${error.message}`);
+    }
+    
+    return data || [];
   }
 }
 
 export const employeeService = new EmployeeService();
-export type { Employee };

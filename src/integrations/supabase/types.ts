@@ -81,6 +81,57 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          company: string | null
+          created_at: string
+          department: string
+          email: string
+          end_date: string | null
+          fonction: string
+          hourly_rate: number | null
+          id: string
+          name: string
+          salary: number | null
+          start_date: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          department: string
+          email: string
+          end_date?: string | null
+          fonction: string
+          hourly_rate?: number | null
+          id?: string
+          name: string
+          salary?: number | null
+          start_date: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          department?: string
+          email?: string
+          end_date?: string | null
+          fonction?: string
+          hourly_rate?: number | null
+          id?: string
+          name?: string
+          salary?: number | null
+          start_date?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       memorandums: {
         Row: {
           author_id: string

@@ -15,7 +15,7 @@ import { useForm } from 'react-hook-form';
 import { Search, Plus, Edit, Trash2, UserCheck, UserX, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import EmployeeEditModal from '../components/employees/EmployeeEditModal';
-import { employeeService, Employee } from '../services/employeeService';
+import { employeeService, Employee, CreateEmployeeData } from '../services/employeeService';
 
 const mockFonctions = [
   'Développeur Full Stack',
@@ -47,7 +47,7 @@ const EmployeesPage = () => {
   const [activeTab, setActiveTab] = useState('employees');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const form = useForm();
+  const form = useForm<CreateEmployeeData>();
 
   // Charger les employés au montage du composant
   useEffect(() => {
@@ -84,9 +84,17 @@ const EmployeesPage = () => {
     return matchesSearch && matchesType;
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: CreateEmployeeData) => {
     try {
-      await employeeService.createEmployee(data);
+      // Convert start_date to proper format and set defaults
+      const employeeData: CreateEmployeeData = {
+        ...data,
+        start_date: data.start_date,
+        salary: data.type === 'employee' ? (data.salary || 0) : 0,
+        status: data.status || 'active'
+      };
+
+      await employeeService.createEmployee(employeeData);
       toast({
         title: "Succès",
         description: "Employé ajouté avec succès",
@@ -308,7 +316,7 @@ const EmployeesPage = () => {
                 />
                 <FormField
                   control={form.control}
-                  name="startDate"
+                  name="start_date"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Date de début</FormLabel>
@@ -405,16 +413,16 @@ const EmployeesPage = () => {
                       </TableCell>
                       <TableCell>
                         {person.type === 'employee' ? (
-                          <span className="text-sm">{person.salary.toLocaleString()} €/an</span>
+                          <span className="text-sm">{Number(person.salary || 0).toLocaleString()} €/an</span>
                         ) : (
                           <div className="text-sm">
-                            <div>{person.hourlyRate}€/h</div>
+                            <div>{person.hourly_rate || 0}€/h</div>
                             {person.company && (
                               <div className="text-gray-500 text-xs">{person.company}</div>
                             )}
-                            {person.endDate && (
+                            {person.end_date && (
                               <div className="text-gray-500 text-xs">
-                                Fin: {new Date(person.endDate).toLocaleDateString()}
+                                Fin: {new Date(person.end_date).toLocaleDateString()}
                               </div>
                             )}
                           </div>
