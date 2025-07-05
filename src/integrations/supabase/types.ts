@@ -81,6 +81,92 @@ export type Database = {
         }
         Relationships: []
       }
+      memorandums: {
+        Row: {
+          author_id: string
+          author_name: string
+          category: string
+          content: string
+          created_at: string
+          id: string
+          priority: string
+          status: string
+          target_audience: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          author_name: string
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          priority: string
+          status?: string
+          target_audience?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          priority?: string
+          status?: string
+          target_audience?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      validation_steps: {
+        Row: {
+          action: string
+          comment: string | null
+          id: string
+          level: number
+          memorandum_id: string
+          timestamp: string
+          validator_id: string
+          validator_name: string
+          validator_role: string
+        }
+        Insert: {
+          action: string
+          comment?: string | null
+          id?: string
+          level: number
+          memorandum_id: string
+          timestamp?: string
+          validator_id: string
+          validator_name: string
+          validator_role: string
+        }
+        Update: {
+          action?: string
+          comment?: string | null
+          id?: string
+          level?: number
+          memorandum_id?: string
+          timestamp?: string
+          validator_id?: string
+          validator_name?: string
+          validator_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_steps_memorandum_id_fkey"
+            columns: ["memorandum_id"]
+            isOneToOne: false
+            referencedRelation: "memorandums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
