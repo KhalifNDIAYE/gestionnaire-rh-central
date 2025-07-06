@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,31 +15,13 @@ import { Search, Plus, Edit, Trash2, UserCheck, UserX, Briefcase } from 'lucide-
 import { useToast } from '@/hooks/use-toast';
 import EmployeeEditModal from '../components/employees/EmployeeEditModal';
 import { employeeService, Employee, CreateEmployeeData } from '../services/employeeService';
-
-const mockFonctions = [
-  'Développeur Full Stack',
-  'Développeur Frontend',
-  'Développeur Backend',
-  'Chef de Projet',
-  'Analyste Financier',
-  'Comptable',
-  'Responsable RH',
-  'Chef de Département RH',
-  'Chargé de Recrutement',
-  'Chargée de Communication',
-  'Responsable Marketing',
-  'Commercial',
-  'Administrateur Système',
-  'Consultant ERP',
-  'Consultant Web',
-  'Consultant Stratégique',
-  'Expert Technique'
-];
+import { functionsService } from '../services/functionsService';
 
 const EmployeesPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [jobFunctions, setJobFunctions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -49,9 +30,10 @@ const EmployeesPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const form = useForm<CreateEmployeeData>();
 
-  // Charger les employés au montage du composant
+  // Charger les employés et les fonctions au montage du composant
   useEffect(() => {
     loadEmployees();
+    loadJobFunctions();
   }, []);
 
   const loadEmployees = async () => {
@@ -68,6 +50,35 @@ const EmployeesPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadJobFunctions = async () => {
+    try {
+      const functions = await functionsService.getAllFunctions();
+      setJobFunctions(functions.map(func => func.title));
+    } catch (error) {
+      console.error('Erreur lors du chargement des fonctions:', error);
+      // Use fallback functions if loading fails
+      setJobFunctions([
+        'Développeur Full Stack',
+        'Développeur Frontend',
+        'Développeur Backend',
+        'Chef de Projet',
+        'Analyste Financier',
+        'Comptable',
+        'Responsable RH',
+        'Chef de Département RH',
+        'Chargé de Recrutement',
+        'Chargée de Communication',
+        'Responsable Marketing',
+        'Commercial',
+        'Administrateur Système',
+        'Consultant ERP',
+        'Consultant Web',
+        'Consultant Stratégique',
+        'Expert Technique'
+      ]);
     }
   };
 
@@ -97,7 +108,7 @@ const EmployeesPage = () => {
       await employeeService.createEmployee(employeeData);
       toast({
         title: "Succès",
-        description: "Employé ajouté avec succès",
+        description: "Agent ajouté avec succès",
       });
       setIsDialogOpen(false);
       form.reset();
@@ -106,7 +117,7 @@ const EmployeesPage = () => {
       console.error('Erreur lors de la création:', error);
       toast({
         title: "Erreur",
-        description: "Impossible d'ajouter l'employé",
+        description: "Impossible d'ajouter l'agent",
         variant: "destructive",
       });
     }
@@ -121,7 +132,7 @@ const EmployeesPage = () => {
     loadEmployees(); // Recharger la liste après modification
     toast({
       title: "Succès",
-      description: "Employé modifié avec succès",
+      description: "Agent modifié avec succès",
     });
   };
 
@@ -130,14 +141,14 @@ const EmployeesPage = () => {
       await employeeService.deleteEmployee(employee.id);
       toast({
         title: "Succès",
-        description: "Employé supprimé avec succès",
+        description: "Agent supprimé avec succès",
       });
       loadEmployees(); // Recharger la liste
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'employé",
+        description: "Impossible de supprimer l'agent",
         variant: "destructive",
       });
     }
@@ -258,7 +269,7 @@ const EmployeesPage = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {mockFonctions.map((fonction) => (
+                          {jobFunctions.map((fonction) => (
                             <SelectItem key={fonction} value={fonction}>
                               {fonction}
                             </SelectItem>
@@ -480,7 +491,6 @@ const EmployeesPage = () => {
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         onEmployeeUpdated={handleEmployeeUpdated}
-        mockFonctions={mockFonctions}
       />
     </div>
   );
