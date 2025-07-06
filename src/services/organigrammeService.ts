@@ -1,10 +1,45 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export type OrganizationalUnit = Tables<'organizational_units'>;
-export type CreateOrganizationalUnit = TablesInsert<'organizational_units'>;
-export type UpdateOrganizationalUnit = TablesUpdate<'organizational_units'>;
+// Define local types for organizational units since they're not in the generated types yet
+export interface OrganizationalUnit {
+  id: string;
+  name: string;
+  type: 'direction' | 'unite' | 'cellule' | 'comite' | 'service';
+  description: string;
+  parent_id: string | null;
+  manager_id: string | null;
+  manager_name: string | null;
+  employees: string[];
+  color: string;
+  level: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateOrganizationalUnit {
+  name: string;
+  type: 'direction' | 'unite' | 'cellule' | 'comite' | 'service';
+  description: string;
+  parent_id?: string | null;
+  manager_id?: string | null;
+  manager_name?: string | null;
+  employees?: string[];
+  color: string;
+  level: number;
+}
+
+export interface UpdateOrganizationalUnit {
+  name?: string;
+  type?: 'direction' | 'unite' | 'cellule' | 'comite' | 'service';
+  description?: string;
+  parent_id?: string | null;
+  manager_id?: string | null;
+  manager_name?: string | null;
+  employees?: string[];
+  color?: string;
+  level?: number;
+}
 
 class OrganigrammeService {
   async getUnits(): Promise<OrganizationalUnit[]> {
@@ -36,7 +71,7 @@ class OrganigrammeService {
     return data;
   }
 
-  async createUnit(unitData: Omit<CreateOrganizationalUnit, 'id' | 'created_at' | 'updated_at'>): Promise<OrganizationalUnit> {
+  async createUnit(unitData: CreateOrganizationalUnit): Promise<OrganizationalUnit> {
     const { data, error } = await supabase
       .from('organizational_units')
       .insert(unitData)
