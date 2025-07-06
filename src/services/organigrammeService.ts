@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define local types for organizational units since they're not in the generated types yet
@@ -44,7 +45,7 @@ export interface UpdateOrganizationalUnit {
 class OrganigrammeService {
   async getUnits(): Promise<OrganizationalUnit[]> {
     const { data, error } = await supabase
-      .from('organizational_units')
+      .from('organizational_units' as any)
       .select('*')
       .order('level', { ascending: true });
 
@@ -53,12 +54,12 @@ class OrganigrammeService {
       throw error;
     }
 
-    return data || [];
+    return (data || []) as OrganizationalUnit[];
   }
 
   async getUnitById(id: string): Promise<OrganizationalUnit | null> {
     const { data, error } = await supabase
-      .from('organizational_units')
+      .from('organizational_units' as any)
       .select('*')
       .eq('id', id)
       .maybeSingle();
@@ -68,12 +69,12 @@ class OrganigrammeService {
       throw error;
     }
 
-    return data;
+    return data as OrganizationalUnit | null;
   }
 
   async createUnit(unitData: CreateOrganizationalUnit): Promise<OrganizationalUnit> {
     const { data, error } = await supabase
-      .from('organizational_units')
+      .from('organizational_units' as any)
       .insert(unitData)
       .select()
       .single();
@@ -83,12 +84,12 @@ class OrganigrammeService {
       throw new Error('Impossible de créer l\'unité organisationnelle');
     }
 
-    return data;
+    return data as OrganizationalUnit;
   }
 
   async updateUnit(id: string, updates: UpdateOrganizationalUnit): Promise<OrganizationalUnit> {
     const { data, error } = await supabase
-      .from('organizational_units')
+      .from('organizational_units' as any)
       .update(updates)
       .eq('id', id)
       .select()
@@ -99,12 +100,12 @@ class OrganigrammeService {
       throw new Error('Impossible de mettre à jour l\'unité organisationnelle');
     }
 
-    return data;
+    return data as OrganizationalUnit;
   }
 
   async deleteUnit(id: string): Promise<void> {
     const { error } = await supabase
-      .from('organizational_units')
+      .from('organizational_units' as any)
       .delete()
       .eq('id', id);
 
@@ -135,3 +136,4 @@ class OrganigrammeService {
 }
 
 export const organigrammeService = new OrganigrammeService();
+
