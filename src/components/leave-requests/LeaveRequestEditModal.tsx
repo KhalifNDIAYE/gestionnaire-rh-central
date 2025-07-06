@@ -25,8 +25,8 @@ const LeaveRequestEditModal = ({ isOpen, onClose, request, onSave }: LeaveReques
   const form = useForm({
     defaultValues: {
       type: request.type,
-      startDate: new Date(request.startDate),
-      endDate: new Date(request.endDate),
+      startDate: new Date(request.start_date),
+      endDate: new Date(request.end_date),
       reason: request.reason
     }
   });
@@ -34,8 +34,8 @@ const LeaveRequestEditModal = ({ isOpen, onClose, request, onSave }: LeaveReques
   const onSubmit = (data: any) => {
     onSave(request.id, {
       type: data.type,
-      startDate: format(data.startDate, 'yyyy-MM-dd'),
-      endDate: format(data.endDate, 'yyyy-MM-dd'),
+      start_date: format(data.startDate, 'yyyy-MM-dd'),
+      end_date: format(data.endDate, 'yyyy-MM-dd'),
       reason: data.reason
     });
     onClose();
