@@ -201,7 +201,7 @@ const OrganigrammePage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {units.reduce((total, unit) => total + unit.employees.length, 0)}
+                  {units.reduce((total, unit) => total + (unit.employees?.length || 0), 0)}
                 </div>
               </CardContent>
             </Card>
@@ -212,7 +212,7 @@ const OrganigrammePage = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  {units.filter(unit => !unit.managerName).length}
+                  {units.filter(unit => !unit.manager_name).length}
                 </div>
               </CardContent>
             </Card>

@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +43,7 @@ const UnitList = ({
     }
   };
 
-  const getParentName = (parentId?: string) => {
+  const getParentName = (parentId?: string | null) => {
     if (!parentId) return 'Racine';
     const parent = units.find(unit => unit.id === parentId);
     return parent ? parent.name : 'Inconnu';
@@ -98,7 +97,7 @@ const UnitList = ({
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    {getParentName(unit.parentId)}
+                    {getParentName(unit.parent_id)}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -108,13 +107,13 @@ const UnitList = ({
                 </TableCell>
                 <TableCell>
                   <div className="text-sm">
-                    {unit.managerName || 'Non assigné'}
+                    {unit.manager_name || 'Non assigné'}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-1">
                     <Users className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm">{unit.employees.length}</span>
+                    <span className="text-sm">{unit.employees?.length || 0}</span>
                   </div>
                 </TableCell>
                 <TableCell>

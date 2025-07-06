@@ -28,8 +28,8 @@ const UnitFormModal = ({
     name: '',
     type: 'service' as OrganizationalUnit['type'],
     description: '',
-    parentId: '',
-    managerName: '',
+    parent_id: '',
+    manager_name: '',
     level: 0,
     color: '#6b7280',
   });
@@ -40,8 +40,8 @@ const UnitFormModal = ({
         name: unit.name,
         type: unit.type,
         description: unit.description,
-        parentId: unit.parentId || '',
-        managerName: unit.managerName || '',
+        parent_id: unit.parent_id || '',
+        manager_name: unit.manager_name || '',
         level: unit.level,
         color: unit.color,
       });
@@ -50,8 +50,8 @@ const UnitFormModal = ({
         name: '',
         type: 'service',
         description: '',
-        parentId: '',
-        managerName: '',
+        parent_id: '',
+        manager_name: '',
         level: 0,
         color: '#6b7280',
       });
@@ -63,14 +63,14 @@ const UnitFormModal = ({
     setLoading(true);
 
     try {
-      const parentUnit = parentUnits.find(p => p.id === formData.parentId);
+      const parentUnit = parentUnits.find(p => p.id === formData.parent_id);
       const level = parentUnit ? parentUnit.level + 1 : 0;
 
       const unitData = {
         ...formData,
+        parent_id: formData.parent_id || null,
         level,
         employees: unit?.employees || [],
-        children: unit?.children,
       };
 
       if (unit) {
@@ -152,10 +152,10 @@ const UnitFormModal = ({
           </div>
 
           <div>
-            <Label htmlFor="parentId">Unité parent</Label>
+            <Label htmlFor="parent_id">Unité parent</Label>
             <Select 
-              value={formData.parentId} 
-              onValueChange={(value) => setFormData({ ...formData, parentId: value })}
+              value={formData.parent_id} 
+              onValueChange={(value) => setFormData({ ...formData, parent_id: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner une unité parent" />
@@ -174,11 +174,11 @@ const UnitFormModal = ({
           </div>
 
           <div>
-            <Label htmlFor="managerName">Responsable</Label>
+            <Label htmlFor="manager_name">Responsable</Label>
             <Input
-              id="managerName"
-              value={formData.managerName}
-              onChange={(e) => setFormData({ ...formData, managerName: e.target.value })}
+              id="manager_name"
+              value={formData.manager_name}
+              onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })}
               placeholder="Nom du responsable"
             />
           </div>

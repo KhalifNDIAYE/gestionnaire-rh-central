@@ -37,7 +37,7 @@ const OrgChart = ({ units, onUnitClick }: OrgChartProps) => {
   };
 
   const renderUnit = (unit: OrganizationalUnit, level: number = 0) => {
-    const children = units.filter(u => u.parentId === unit.id);
+    const children = units.filter(u => u.parent_id === unit.id);
     const isExpanded = expandedUnits.has(unit.id);
     
     return (
@@ -59,14 +59,14 @@ const OrgChart = ({ units, onUnitClick }: OrgChartProps) => {
                 {getTypeLabel(unit.type)}
               </Badge>
               <h3 className="font-semibold text-sm mb-1">{unit.name}</h3>
-              {unit.managerName && (
+              {unit.manager_name && (
                 <p className="text-xs text-gray-600 mb-1">
-                  Responsable: {unit.managerName}
+                  Responsable: {unit.manager_name}
                 </p>
               )}
               <div className="flex justify-between items-center">
                 <p className="text-xs text-gray-500">
-                  {unit.employees.length} employé(s)
+                  {unit.employees?.length || 0} employé(s)
                 </p>
                 {children.length > 0 && (
                   <Badge 
@@ -99,7 +99,7 @@ const OrgChart = ({ units, onUnitClick }: OrgChartProps) => {
     );
   };
 
-  const rootUnits = units.filter(unit => !unit.parentId);
+  const rootUnits = units.filter(unit => !unit.parent_id);
 
   return (
     <div className="p-8 overflow-auto max-w-full">
