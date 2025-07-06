@@ -74,16 +74,16 @@ const LeaveRequestTable = ({
           <TableBody>
             {requests.map((request) => (
               <TableRow key={request.id}>
-                {isManager && <TableCell className="font-medium">{request.employeeName}</TableCell>}
+                {isManager && <TableCell className="font-medium">{request.employee_name}</TableCell>}
                 <TableCell>{request.type}</TableCell>
                 <TableCell>
-                  {format(new Date(request.startDate), 'dd/MM/yyyy')} - {format(new Date(request.endDate), 'dd/MM/yyyy')}
+                  {format(new Date(request.start_date), 'dd/MM/yyyy')} - {format(new Date(request.end_date), 'dd/MM/yyyy')}
                 </TableCell>
                 <TableCell className="max-w-xs truncate">{request.reason}</TableCell>
                 <TableCell>{getStatusBadge(request.status)}</TableCell>
                 {isManager && (
                   <TableCell className="max-w-xs truncate">
-                    {request.managerComment || '-'}
+                    {request.manager_comment || '-'}
                   </TableCell>
                 )}
                 <TableCell>

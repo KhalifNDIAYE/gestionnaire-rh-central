@@ -15,6 +15,7 @@ const LeaveRequestsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
@@ -26,26 +27,47 @@ const LeaveRequestsPage = () => {
     loadRequests();
   }, []);
 
-  const loadRequests = () => {
-    const allRequests = leaveRequestsService.getAllRequests();
-    setRequests(allRequests);
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const allRequests = await leaveRequestsService.getAllRequests();
+      setRequests(allRequests);
+    } catch (error) {
+      console.error('Error loading requests:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les demandes de congés.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const onSubmit = (data: any) => {
-    const newRequest = leaveRequestsService.createRequest({
-      employeeName: user?.name || '',
-      type: data.type,
-      startDate: format(data.startDate, 'yyyy-MM-dd'),
-      endDate: format(data.endDate, 'yyyy-MM-dd'),
-      reason: data.reason
-    });
-    
-    loadRequests();
-    
-    toast({
-      title: "Demande créée",
-      description: "Votre demande de congé a été soumise avec succès.",
-    });
+  const onSubmit = async (data: any) => {
+    try {
+      await leaveRequestsService.createRequest({
+        employee_name: user?.name || '',
+        type: data.type,
+        start_date: format(data.startDate, 'yyyy-MM-dd'),
+        end_date: format(data.endDate, 'yyyy-MM-dd'),
+        reason: data.reason
+      });
+      
+      await loadRequests();
+      
+      toast({
+        title: "Demande créée",
+        description: "Votre demande de congé a été soumise avec succès.",
+      });
+    } catch (error) {
+      console.error('Error creating request:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer la demande de congé.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEdit = (request: LeaveRequest) => {
@@ -61,13 +83,20 @@ const LeaveRequestsPage = () => {
     setEditModalOpen(true);
   };
 
-  const handleSaveEdit = (requestId: string, updates: Partial<LeaveRequest>) => {
-    const updatedRequest = leaveRequestsService.updateRequest(requestId, updates);
-    if (updatedRequest) {
-      loadRequests();
+  const handleSaveEdit = async (requestId: string, updates: Partial<LeaveRequest>) => {
+    try {
+      await leaveRequestsService.updateRequest(requestId, updates);
+      await loadRequests();
       toast({
         title: "Demande modifiée",
         description: "Votre demande a été mise à jour avec succès.",
+      });
+    } catch (error) {
+      console.error('Error updating request:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier la demande.",
+        variant: "destructive"
       });
     }
   };
@@ -85,14 +114,21 @@ const LeaveRequestsPage = () => {
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedRequest) {
-      const success = leaveRequestsService.deleteRequest(selectedRequest.id);
-      if (success) {
-        loadRequests();
+      try {
+        await leaveRequestsService.deleteRequest(selectedRequest.id);
+        await loadRequests();
         toast({
           title: "Demande supprimée",
           description: "La demande a été supprimée avec succès.",
+        });
+      } catch (error) {
+        console.error('Error deleting request:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer la demande.",
+          variant: "destructive"
         });
       }
     }
@@ -105,36 +141,50 @@ const LeaveRequestsPage = () => {
     setApprovalModalOpen(true);
   };
 
-  const handleApprove = (comment?: string) => {
+  const handleApprove = async (comment?: string) => {
     if (selectedRequest) {
-      const updatedRequest = leaveRequestsService.approveRequest(
-        selectedRequest.id, 
-        user?.name || 'Manager', 
-        comment
-      );
-      if (updatedRequest) {
-        loadRequests();
+      try {
+        await leaveRequestsService.approveRequest(
+          selectedRequest.id, 
+          user?.name || 'Manager', 
+          comment
+        );
+        await loadRequests();
         toast({
           title: "Demande approuvée",
-          description: `La demande de ${selectedRequest.employeeName} a été approuvée.`,
+          description: `La demande de ${selectedRequest.employee_name} a été approuvée.`,
+        });
+      } catch (error) {
+        console.error('Error approving request:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible d'approuver la demande.",
+          variant: "destructive"
         });
       }
     }
     setSelectedRequest(null);
   };
 
-  const handleReject = (comment?: string) => {
+  const handleReject = async (comment?: string) => {
     if (selectedRequest) {
-      const updatedRequest = leaveRequestsService.rejectRequest(
-        selectedRequest.id, 
-        user?.name || 'Manager', 
-        comment
-      );
-      if (updatedRequest) {
-        loadRequests();
+      try {
+        await leaveRequestsService.rejectRequest(
+          selectedRequest.id, 
+          user?.name || 'Manager', 
+          comment
+        );
+        await loadRequests();
         toast({
           title: "Demande rejetée",
-          description: `La demande de ${selectedRequest.employeeName} a été rejetée.`,
+          description: `La demande de ${selectedRequest.employee_name} a été rejetée.`,
+        });
+      } catch (error) {
+        console.error('Error rejecting request:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de rejeter la demande.",
+          variant: "destructive"
         });
       }
     }
@@ -143,7 +193,15 @@ const LeaveRequestsPage = () => {
 
   const filteredRequests = isManager 
     ? requests 
-    : requests.filter(req => req.employeeName === user?.name);
+    : requests.filter(req => req.employee_name === user?.name);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Chargement des demandes de congés...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -181,10 +239,10 @@ const LeaveRequestsPage = () => {
             onApprove={handleApprove}
             onReject={handleReject}
             requestDetails={{
-              employeeName: selectedRequest.employeeName,
+              employeeName: selectedRequest.employee_name,
               type: selectedRequest.type,
-              startDate: format(new Date(selectedRequest.startDate), 'dd/MM/yyyy'),
-              endDate: format(new Date(selectedRequest.endDate), 'dd/MM/yyyy'),
+              startDate: format(new Date(selectedRequest.start_date), 'dd/MM/yyyy'),
+              endDate: format(new Date(selectedRequest.end_date), 'dd/MM/yyyy'),
               reason: selectedRequest.reason
             }}
           />

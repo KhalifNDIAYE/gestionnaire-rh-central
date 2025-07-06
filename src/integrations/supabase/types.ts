@@ -168,6 +168,54 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          employee_name: string
+          end_date: string
+          id: string
+          manager_comment: string | null
+          reason: string
+          start_date: string
+          status: string
+          submitted_at: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_name: string
+          end_date: string
+          id?: string
+          manager_comment?: string | null
+          reason: string
+          start_date: string
+          status?: string
+          submitted_at?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          employee_name?: string
+          end_date?: string
+          id?: string
+          manager_comment?: string | null
+          reason?: string
+          start_date?: string
+          status?: string
+          submitted_at?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       memorandums: {
         Row: {
           author_id: string
