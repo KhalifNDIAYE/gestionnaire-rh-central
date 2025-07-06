@@ -54,7 +54,7 @@ class OrganigrammeService {
       throw error;
     }
 
-    return (data || []) as OrganizationalUnit[];
+    return (data || []) as unknown as OrganizationalUnit[];
   }
 
   async getUnitById(id: string): Promise<OrganizationalUnit | null> {
@@ -69,7 +69,7 @@ class OrganigrammeService {
       throw error;
     }
 
-    return data as OrganizationalUnit | null;
+    return data as unknown as OrganizationalUnit | null;
   }
 
   async createUnit(unitData: CreateOrganizationalUnit): Promise<OrganizationalUnit> {
@@ -84,7 +84,7 @@ class OrganigrammeService {
       throw new Error('Impossible de créer l\'unité organisationnelle');
     }
 
-    return data as OrganizationalUnit;
+    return data as unknown as OrganizationalUnit;
   }
 
   async updateUnit(id: string, updates: UpdateOrganizationalUnit): Promise<OrganizationalUnit> {
@@ -100,7 +100,7 @@ class OrganigrammeService {
       throw new Error('Impossible de mettre à jour l\'unité organisationnelle');
     }
 
-    return data as OrganizationalUnit;
+    return data as unknown as OrganizationalUnit;
   }
 
   async deleteUnit(id: string): Promise<void> {
