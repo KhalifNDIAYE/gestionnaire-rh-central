@@ -6,9 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Employee, employeeService } from '../../services/employeeService';
+import { Employee, UpdateEmployeeData, employeeService } from '../../services/employeeService';
 import { OrganizationalUnit, organigrammeService } from '../../services/organigrammeService';
 import { useEffect, useState } from 'react';
+
+interface EmployeeFormData extends UpdateEmployeeData {
+  organizational_unit_id?: string;
+}
 
 interface EmployeeEditModalProps {
   employee: Employee | null;
@@ -19,7 +23,7 @@ interface EmployeeEditModalProps {
 
 const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: EmployeeEditModalProps) => {
   const { toast } = useToast();
-  const form = useForm();
+  const form = useForm<EmployeeFormData>();
   const [organizationalUnits, setOrganizationalUnits] = useState<OrganizationalUnit[]>([]);
 
   useEffect(() => {
@@ -56,11 +60,11 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
     }
   }, [employee, form]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: EmployeeFormData) => {
     if (!employee) return;
 
     try {
-      const updateData = {
+      const updateData: UpdateEmployeeData = {
         ...data,
         organizational_unit_id: data.organizational_unit_id || null
       };

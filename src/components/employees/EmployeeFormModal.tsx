@@ -10,6 +10,10 @@ import { CreateEmployeeData, employeeService } from '../../services/employeeServ
 import { OrganizationalUnit } from '../../services/organigrammeService';
 import { useEffect } from 'react';
 
+interface EmployeeFormData extends CreateEmployeeData {
+  organizational_unit_id?: string;
+}
+
 interface EmployeeFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -26,19 +30,19 @@ const EmployeeFormModal = ({
   jobFunctions 
 }: EmployeeFormModalProps) => {
   const { toast } = useToast();
-  const form = useForm<CreateEmployeeData>();
+  const form = useForm<EmployeeFormData>();
 
   useEffect(() => {
     if (open) {
       form.reset({
         type: 'employee',
         status: 'active',
-        organizational_unit_id: undefined
+        organizational_unit_id: ''
       });
     }
   }, [open, form]);
 
-  const onSubmit = async (data: CreateEmployeeData) => {
+  const onSubmit = async (data: EmployeeFormData) => {
     try {
       // Convert start_date to proper format and set defaults
       const employeeData: CreateEmployeeData = {

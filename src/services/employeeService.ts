@@ -3,11 +3,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 export type Employee = Tables<'employees'>;
-export type CreateEmployeeData = TablesInsert<'employees'>;
-export type UpdateEmployeeData = TablesUpdate<'employees'>;
+
+// Types étendus pour inclure organizational_unit_id
+export type CreateEmployeeData = TablesInsert<'employees'> & {
+  organizational_unit_id?: string | null;
+};
+
+export type UpdateEmployeeData = TablesUpdate<'employees'> & {
+  organizational_unit_id?: string | null;
+};
 
 // Type pour employé avec unité organisationnelle
 export interface EmployeeWithUnit extends Employee {
+  organizational_unit_id?: string | null;
   organizational_unit?: {
     id: string;
     name: string;
@@ -54,7 +62,7 @@ class EmployeeService {
     }
     
     console.log('Employees with units fetched successfully:', data?.length);
-    return (data || []) as unknown as EmployeeWithUnit[];
+    return data as EmployeeWithUnit[];
   }
 
   async createEmployee(employeeData: CreateEmployeeData): Promise<Employee> {
