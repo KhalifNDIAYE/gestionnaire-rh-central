@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
@@ -47,12 +46,7 @@ class EmployeeService {
     const { data, error } = await supabase
       .from('employees')
       .select(`
-        *,
-        organizational_unit:organizational_unit_id (
-          id,
-          name,
-          type
-        )
+        *
       `)
       .order('created_at', { ascending: false });
     
@@ -62,7 +56,14 @@ class EmployeeService {
     }
     
     console.log('Employees with units fetched successfully:', data?.length);
-    return data as EmployeeWithUnit[];
+    
+    // Convertir les données avec le bon type
+    const employeesWithUnits: EmployeeWithUnit[] = (data || []).map(employee => ({
+      ...employee,
+      organizational_unit: null // Pour l'instant, pas de jointure avec les unités organisationnelles
+    }));
+    
+    return employeesWithUnits;
   }
 
   async createEmployee(employeeData: CreateEmployeeData): Promise<Employee> {

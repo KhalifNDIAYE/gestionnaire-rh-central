@@ -1,18 +1,8 @@
 
-export interface TimeEntry {
-  id: string;
-  employeeId: string;
+import { Tables } from '@/integrations/supabase/types';
+
+export interface TimeEntry extends Tables<'time_entries'> {
   employeeName: string;
-  date: string;
-  clockIn?: string;
-  clockOut?: string;
-  breakStart?: string;
-  breakEnd?: string;
-  totalHours: number;
-  status: 'present' | 'absent' | 'late' | 'partial';
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface TimeTrackingStats {
@@ -36,9 +26,9 @@ export interface CreateTimeEntryRequest {
 }
 
 export interface UpdateTimeEntryRequest {
-  clockIn?: string;
-  clockOut?: string;
-  breakStart?: string;
-  breakEnd?: string;
+  clock_in?: string;
+  clock_out?: string;
+  break_start?: string;
+  break_end?: string;
   notes?: string;
 }
