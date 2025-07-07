@@ -6,6 +6,15 @@ export type Employee = Tables<'employees'>;
 export type CreateEmployeeData = TablesInsert<'employees'>;
 export type UpdateEmployeeData = TablesUpdate<'employees'>;
 
+// Type pour employé avec unité organisationnelle
+export interface EmployeeWithUnit extends Employee {
+  organizational_unit?: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+}
+
 class EmployeeService {
   async getAllEmployees(): Promise<Employee[]> {
     console.log('Fetching employees from Supabase...');
@@ -22,6 +31,30 @@ class EmployeeService {
     
     console.log('Employees fetched successfully:', data?.length);
     return data || [];
+  }
+
+  async getAllEmployeesWithUnits(): Promise<EmployeeWithUnit[]> {
+    console.log('Fetching employees with organizational units from Supabase...');
+    
+    const { data, error } = await supabase
+      .from('employees')
+      .select(`
+        *,
+        organizational_unit:organizational_unit_id (
+          id,
+          name,
+          type
+        )
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching employees with units:', error);
+      throw new Error(`Erreur lors du chargement des employés: ${error.message}`);
+    }
+    
+    console.log('Employees with units fetched successfully:', data?.length);
+    return (data || []) as unknown as EmployeeWithUnit[];
   }
 
   async createEmployee(employeeData: CreateEmployeeData): Promise<Employee> {
@@ -140,6 +173,23 @@ class EmployeeService {
     if (error) {
       console.error('Error fetching employees by type:', error);
       throw new Error(`Erreur lors de la récupération des employés par type: ${error.message}`);
+    }
+    
+    return data || [];
+  }
+
+  async getEmployeesByOrganizationalUnit(unitId: string): Promise<Employee[]> {
+    console.log('Fetching employees by organizational unit:', unitId);
+    
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('organizational_unit_id', unitId)
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching employees by organizational unit:', error);
+      throw new Error(`Erreur lors de la récupération des employés par unité: ${error.message}`);
     }
     
     return data || [];

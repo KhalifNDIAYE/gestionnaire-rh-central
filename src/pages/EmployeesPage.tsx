@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,41 +6,40 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useForm } from 'react-hook-form';
-import { Search, Plus, Edit, Trash2, UserCheck, UserX, Briefcase } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, UserCheck, UserX, Briefcase, Building } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import EmployeeEditModal from '../components/employees/EmployeeEditModal';
-import { employeeService, Employee, CreateEmployeeData } from '../services/employeeService';
+import EmployeeFormModal from '../components/employees/EmployeeFormModal';
+import { employeeService, Employee, EmployeeWithUnit } from '../services/employeeService';
 import { functionsService } from '../services/functionsService';
+import { organigrammeService, OrganizationalUnit } from '../services/organigrammeService';
 
 const EmployeesPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<EmployeeWithUnit[]>([]);
+  const [organizationalUnits, setOrganizationalUnits] = useState<OrganizationalUnit[]>([]);
   const [jobFunctions, setJobFunctions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('employees');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const form = useForm<CreateEmployeeData>();
 
-  // Charger les employés et les fonctions au montage du composant
+  // Charger les employés, les unités organisationnelles et les fonctions au montage du composant
   useEffect(() => {
     loadEmployees();
+    loadOrganizationalUnits();
     loadJobFunctions();
   }, []);
 
   const loadEmployees = async () => {
     try {
       setLoading(true);
-      const data = await employeeService.getAllEmployees();
+      const data = await employeeService.getAllEmployeesWithUnits();
       setEmployees(data);
     } catch (error) {
       console.error('Erreur lors du chargement des employés:', error);
@@ -50,6 +50,15 @@ const EmployeesPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOrganizationalUnits = async () => {
+    try {
+      const units = await organigrammeService.getUnits();
+      setOrganizationalUnits(units);
+    } catch (error) {
+      console.error('Erreur lors du chargement des unités organisationnelles:', error);
     }
   };
 
@@ -86,7 +95,8 @@ const EmployeesPage = () => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.fonction.toLowerCase().includes(searchTerm.toLowerCase());
+      employee.fonction.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (employee.organizational_unit?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesType = activeTab === 'all' || 
       (activeTab === 'employees' && employee.type === 'employee') ||
@@ -94,34 +104,6 @@ const EmployeesPage = () => {
     
     return matchesSearch && matchesType;
   });
-
-  const onSubmit = async (data: CreateEmployeeData) => {
-    try {
-      // Convert start_date to proper format and set defaults
-      const employeeData: CreateEmployeeData = {
-        ...data,
-        start_date: data.start_date,
-        salary: data.type === 'employee' ? (data.salary || 0) : 0,
-        status: data.status || 'active'
-      };
-
-      await employeeService.createEmployee(employeeData);
-      toast({
-        title: "Succès",
-        description: "Agent ajouté avec succès",
-      });
-      setIsDialogOpen(false);
-      form.reset();
-      loadEmployees(); // Recharger la liste
-    } catch (error) {
-      console.error('Erreur lors de la création:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter l'agent",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleEditEmployee = (employee: Employee) => {
     setSelectedEmployee(employee);
@@ -134,6 +116,10 @@ const EmployeesPage = () => {
       title: "Succès",
       description: "Agent modifié avec succès",
     });
+  };
+
+  const handleEmployeeCreated = () => {
+    loadEmployees(); // Recharger la liste après création
   };
 
   const handleDeleteEmployee = async (employee: Employee) => {
@@ -193,158 +179,10 @@ const EmployeesPage = () => {
           <h1 className="text-3xl font-bold">Gestion des employés & consultants</h1>
           <p className="text-gray-600">Gérer les employés permanents et les consultants externes</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter une personne
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Ajouter un employé ou consultant</DialogTitle>
-              <DialogDescription>
-                Remplissez les informations de la personne
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner le type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="employee">Employé permanent</SelectItem>
-                          <SelectItem value="consultant">Consultant externe</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nom complet</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Jean Dupont" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="jean.dupont@company.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="fonction"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fonction</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une fonction" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {jobFunctions.map((fonction) => (
-                            <SelectItem key={fonction} value={fonction}>
-                              {fonction}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Département</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner un département" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="IT">IT</SelectItem>
-                          <SelectItem value="Finance">Finance</SelectItem>
-                          <SelectItem value="HR">RH</SelectItem>
-                          <SelectItem value="Marketing">Marketing</SelectItem>
-                          <SelectItem value="Operations">Opérations</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Statut</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue="active">
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner le statut" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="active">Actif</SelectItem>
-                          <SelectItem value="inactive">Inactif</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="start_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date de début</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full">
-                  Ajouter la personne
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setIsFormModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter une personne
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -376,6 +214,7 @@ const EmployeesPage = () => {
                     <TableHead>Fonction</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Département</TableHead>
+                    <TableHead>Unité Organisationnelle</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Détails</TableHead>
                     <TableHead>Actions</TableHead>
@@ -407,6 +246,16 @@ const EmployeesPage = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{person.department}</TableCell>
+                      <TableCell>
+                        {person.organizational_unit ? (
+                          <Badge variant="outline" className="text-xs">
+                            <Building className="w-3 h-3 mr-1" />
+                            {person.organizational_unit.name}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Non assigné</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={person.status === 'active' ? 'default' : 'secondary'}>
                           {person.status === 'active' ? (
@@ -485,6 +334,14 @@ const EmployeesPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <EmployeeFormModal
+        open={isFormModalOpen}
+        onOpenChange={setIsFormModalOpen}
+        onEmployeeCreated={handleEmployeeCreated}
+        organizationalUnits={organizationalUnits}
+        jobFunctions={jobFunctions}
+      />
 
       <EmployeeEditModal
         employee={selectedEmployee}

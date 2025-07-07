@@ -2,7 +2,9 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OrganizationalUnit } from '../../services/organigrammeService';
-import { useState } from 'react';
+import { employeeService } from '../../services/employeeService';
+import { useState, useEffect } from 'react';
+import { Users } from 'lucide-react';
 
 interface OrgChartProps {
   units: OrganizationalUnit[];
@@ -11,6 +13,27 @@ interface OrgChartProps {
 
 const OrgChart = ({ units, onUnitClick }: OrgChartProps) => {
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
+  const [unitEmployeeCount, setUnitEmployeeCount] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    loadEmployeeCounts();
+  }, [units]);
+
+  const loadEmployeeCounts = async () => {
+    const counts: Record<string, number> = {};
+    
+    for (const unit of units) {
+      try {
+        const employees = await employeeService.getEmployeesByOrganizationalUnit(unit.id);
+        counts[unit.id] = employees.length;
+      } catch (error) {
+        console.error(`Erreur lors du chargement des employés pour l'unité ${unit.id}:`, error);
+        counts[unit.id] = 0;
+      }
+    }
+    
+    setUnitEmployeeCount(counts);
+  };
 
   const getTypeLabel = (type: OrganizationalUnit['type']) => {
     switch (type) {
@@ -39,6 +62,7 @@ const OrgChart = ({ units, onUnitClick }: OrgChartProps) => {
   const renderUnit = (unit: OrganizationalUnit, level: number = 0) => {
     const children = units.filter(u => u.parent_id === unit.id);
     const isExpanded = expandedUnits.has(unit.id);
+    const employeeCount = unitEmployeeCount[unit.id] || 0;
     
     return (
       <div key={unit.id} className="flex flex-col items-center">
@@ -65,9 +89,12 @@ const OrgChart = ({ units, onUnitClick }: OrgChartProps) => {
                 </p>
               )}
               <div className="flex justify-between items-center">
-                <p className="text-xs text-gray-500">
-                  {unit.employees?.length || 0} employé(s)
-                </p>
+                <div className="flex items-center space-x-1">
+                  <Users className="w-3 h-3 text-gray-500" />
+                  <p className="text-xs text-gray-500">
+                    {employeeCount} employé(s)
+                  </p>
+                </div>
                 {children.length > 0 && (
                   <Badge 
                     variant="outline" 

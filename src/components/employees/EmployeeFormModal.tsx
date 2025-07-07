@@ -6,78 +6,62 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Employee, employeeService } from '../../services/employeeService';
-import { OrganizationalUnit, organigrammeService } from '../../services/organigrammeService';
-import { useEffect, useState } from 'react';
+import { CreateEmployeeData, employeeService } from '../../services/employeeService';
+import { OrganizationalUnit } from '../../services/organigrammeService';
+import { useEffect } from 'react';
 
-interface EmployeeEditModalProps {
-  employee: Employee | null;
+interface EmployeeFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEmployeeUpdated: () => void;
+  onEmployeeCreated: () => void;
+  organizationalUnits: OrganizationalUnit[];
+  jobFunctions: string[];
 }
 
-const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: EmployeeEditModalProps) => {
+const EmployeeFormModal = ({ 
+  open, 
+  onOpenChange, 
+  onEmployeeCreated, 
+  organizationalUnits,
+  jobFunctions 
+}: EmployeeFormModalProps) => {
   const { toast } = useToast();
-  const form = useForm();
-  const [organizationalUnits, setOrganizationalUnits] = useState<OrganizationalUnit[]>([]);
+  const form = useForm<CreateEmployeeData>();
 
   useEffect(() => {
-    const loadOrganizationalUnits = async () => {
-      try {
-        const units = await organigrammeService.getUnits();
-        setOrganizationalUnits(units);
-      } catch (error) {
-        console.error('Erreur lors du chargement des unités:', error);
-      }
-    };
-
     if (open) {
-      loadOrganizationalUnits();
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (employee) {
       form.reset({
-        name: employee.name,
-        email: employee.email,
-        fonction: employee.fonction,
-        department: employee.department,
-        status: employee.status,
-        start_date: employee.start_date,
-        salary: employee.salary,
-        type: employee.type,
-        end_date: employee.end_date,
-        hourly_rate: employee.hourly_rate,
-        company: employee.company,
-        organizational_unit_id: (employee as any).organizational_unit_id || '',
+        type: 'employee',
+        status: 'active',
+        organizational_unit_id: undefined
       });
     }
-  }, [employee, form]);
+  }, [open, form]);
 
-  const onSubmit = async (data: any) => {
-    if (!employee) return;
-
+  const onSubmit = async (data: CreateEmployeeData) => {
     try {
-      const updateData = {
+      // Convert start_date to proper format and set defaults
+      const employeeData: CreateEmployeeData = {
         ...data,
+        start_date: data.start_date,
+        salary: data.type === 'employee' ? (data.salary || 0) : 0,
+        status: data.status || 'active',
         organizational_unit_id: data.organizational_unit_id || null
       };
-      
-      await employeeService.updateEmployee(employee.id, updateData);
+
+      await employeeService.createEmployee(employeeData);
       toast({
         title: "Succès",
-        description: "Agent modifié avec succès",
+        description: "Agent ajouté avec succès",
       });
       onOpenChange(false);
-      onEmployeeUpdated();
       form.reset();
+      onEmployeeCreated();
     } catch (error) {
-      console.error('Erreur lors de la modification:', error);
+      console.error('Erreur lors de la création:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de modifier l'agent",
+        description: "Impossible d'ajouter l'agent",
         variant: "destructive",
       });
     }
@@ -85,15 +69,61 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Modifier l'agent</DialogTitle>
+          <DialogTitle>Ajouter un employé ou consultant</DialogTitle>
           <DialogDescription>
-            Modifier les informations de l'agent
+            Remplissez les informations de la personne
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="type"
+                rules={{ required: 'Le type est requis' }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="employee">Employé permanent</SelectItem>
+                        <SelectItem value="consultant">Consultant externe</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Statut</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue="active">
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le statut" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Actif</SelectItem>
+                        <SelectItem value="inactive">Inactif</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -139,9 +169,20 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fonction</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Développeur Full Stack" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une fonction" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {jobFunctions.map((fonction) => (
+                          <SelectItem key={fonction} value={fonction}>
+                            {fonction}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -153,9 +194,20 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Département</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: IT, RH, Finance..." {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un département" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="IT">IT</SelectItem>
+                        <SelectItem value="Finance">Finance</SelectItem>
+                        <SelectItem value="HR">RH</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                        <SelectItem value="Operations">Opérations</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -168,7 +220,7 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Unité organisationnelle</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner une unité (optionnel)" />
@@ -188,64 +240,20 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
               )}
             />
 
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Statut</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner le statut" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Actif</SelectItem>
-                        <SelectItem value="inactive">Inactif</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner le type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="employee">Employé</SelectItem>
-                        <SelectItem value="consultant">Consultant</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="start_date"
-                rules={{ required: 'La date de début est requise' }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date de début</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="start_date"
+              rules={{ required: 'La date de début est requise' }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date de début</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {form.watch('type') === 'employee' ? (
               <FormField
@@ -317,7 +325,7 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
             )}
 
             <Button type="submit" className="w-full">
-              Sauvegarder les modifications
+              Ajouter la personne
             </Button>
           </form>
         </Form>
@@ -326,4 +334,4 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
   );
 };
 
-export default EmployeeEditModal;
+export default EmployeeFormModal;
