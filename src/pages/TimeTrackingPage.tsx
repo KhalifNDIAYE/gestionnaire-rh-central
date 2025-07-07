@@ -18,6 +18,7 @@ import TimeTrackingStatsComponent from '@/components/time-tracking/TimeTrackingS
 
 import { TimeEntry, TimeTrackingStats } from '@/types/timeTracking';
 import { timeTrackingService } from '@/services/timeTrackingService';
+import { employeeService } from '@/services/employeeService';
 
 const TimeTrackingPage = () => {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ const TimeTrackingPage = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentEmployee, setCurrentEmployee] = useState<{ id: string; name: string } | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -54,6 +56,21 @@ const TimeTrackingPage = () => {
   };
 
   useEffect(() => {
+    const loadCurrentEmployee = async () => {
+      try {
+        const employees = await employeeService.getAllEmployees();
+        if (employees.length > 0) {
+          setCurrentEmployee({
+            id: employees[0].id,
+            name: employees[0].name
+          });
+        }
+      } catch (error) {
+        console.error('Error loading current employee:', error);
+      }
+    };
+
+    loadCurrentEmployee();
     loadData();
   }, []);
 
@@ -111,17 +128,19 @@ const TimeTrackingPage = () => {
         </TabsList>
 
         <TabsContent value="clock" className="space-y-6">
-          <ClockInOutButtons
-            employeeId={user?.id || '1'}
-            employeeName={user?.name || 'Utilisateur'}
-            onUpdate={handleUpdate}
-          />
+          {currentEmployee && (
+            <ClockInOutButtons
+              employeeId={currentEmployee.id}
+              employeeName={currentEmployee.name}
+              onUpdate={handleUpdate}
+            />
+          )}
           
           {/* Affichage du dernier pointage du jour */}
-          {(() => {
+          {currentEmployee && (() => {
             const today = new Date().toISOString().split('T')[0];
             const todayEntry = timeEntries.find(entry => 
-              entry.employeeId === (user?.id || '1') && entry.date === today
+              entry.employee_id === currentEmployee.id && entry.date === today
             );
             
             if (todayEntry) {
@@ -131,15 +150,15 @@ const TimeTrackingPage = () => {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Entrée:</span>
-                      <span className="ml-2 font-medium">{todayEntry.clockIn || '-'}</span>
+                      <span className="ml-2 font-medium">{todayEntry.clock_in || '-'}</span>
                     </div>
                     <div>
                       <span className="text-gray-600">Sortie:</span>
-                      <span className="ml-2 font-medium">{todayEntry.clockOut || '-'}</span>
+                      <span className="ml-2 font-medium">{todayEntry.clock_out || '-'}</span>
                     </div>
                     <div>
                       <span className="text-gray-600">Heures:</span>
-                      <span className="ml-2 font-medium">{todayEntry.totalHours.toFixed(1)}h</span>
+                      <span className="ml-2 font-medium">{(todayEntry.total_hours || 0).toFixed(1)}h</span>
                     </div>
                     <div>
                       <span className="text-gray-600">Statut:</span>

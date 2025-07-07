@@ -1,10 +1,11 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, LogIn, LogOut, Coffee, CoffeeIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { timeTrackingService } from '@/services/timeTrackingService';
+import { employeeService } from '@/services/employeeService';
 
 interface ClockInOutButtonsProps {
   employeeId: string;
@@ -14,13 +15,48 @@ interface ClockInOutButtonsProps {
 
 const ClockInOutButtons = ({ employeeId, employeeName, onUpdate }: ClockInOutButtonsProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [actualEmployeeId, setActualEmployeeId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Si l'employeeId n'est pas un UUID valide, chercher le premier employé
+    const loadEmployee = async () => {
+      try {
+        if (employeeId === '1' || !employeeId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          const employees = await employeeService.getAllEmployees();
+          if (employees.length > 0) {
+            setActualEmployeeId(employees[0].id);
+          }
+        } else {
+          setActualEmployeeId(employeeId);
+        }
+      } catch (error) {
+        console.error('Error loading employee:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les informations de l\'employé',
+          variant: 'destructive'
+        });
+      }
+    };
+
+    loadEmployee();
+  }, [employeeId, toast]);
+
   const handleClockAction = async (type: 'clock-in' | 'clock-out' | 'break-start' | 'break-end') => {
+    if (!actualEmployeeId) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun employé sélectionné',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       await timeTrackingService.createTimeEntry({
-        employeeId,
+        employeeId: actualEmployeeId,
         employeeName,
         type
       });
@@ -39,6 +75,7 @@ const ClockInOutButtons = ({ employeeId, employeeName, onUpdate }: ClockInOutBut
 
       onUpdate();
     } catch (error) {
+      console.error('Error creating time entry:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible d\'enregistrer le pointage',
@@ -69,7 +106,7 @@ const ClockInOutButtons = ({ employeeId, employeeName, onUpdate }: ClockInOutBut
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Button
             onClick={() => handleClockAction('clock-in')}
-            disabled={isLoading}
+            disabled={isLoading || !actualEmployeeId}
             className="flex flex-col items-center gap-2 h-auto py-4 bg-green-600 hover:bg-green-700"
           >
             <LogIn className="w-6 h-6" />
@@ -78,7 +115,7 @@ const ClockInOutButtons = ({ employeeId, employeeName, onUpdate }: ClockInOutBut
           
           <Button
             onClick={() => handleClockAction('clock-out')}
-            disabled={isLoading}
+            disabled={isLoading || !actualEmployeeId}
             className="flex flex-col items-center gap-2 h-auto py-4 bg-red-600 hover:bg-red-700"
           >
             <LogOut className="w-6 h-6" />
@@ -87,7 +124,7 @@ const ClockInOutButtons = ({ employeeId, employeeName, onUpdate }: ClockInOutBut
           
           <Button
             onClick={() => handleClockAction('break-start')}
-            disabled={isLoading}
+            disabled={isLoading || !actualEmployeeId}
             variant="outline"
             className="flex flex-col items-center gap-2 h-auto py-4"
           >
@@ -97,7 +134,7 @@ const ClockInOutButtons = ({ employeeId, employeeName, onUpdate }: ClockInOutBut
           
           <Button
             onClick={() => handleClockAction('break-end')}
-            disabled={isLoading}
+            disabled={isLoading || !actualEmployeeId}
             variant="outline"
             className="flex flex-col items-center gap-2 h-auto py-4"
           >

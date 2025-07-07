@@ -4,11 +4,11 @@ import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/type
 export type Employee = Tables<'employees'>;
 
 // Types étendus pour inclure organizational_unit_id
-export type CreateEmployeeData = TablesInsert<'employees'> & {
+export type CreateEmployeeData = Omit<TablesInsert<'employees'>, 'id' | 'created_at' | 'updated_at'> & {
   organizational_unit_id?: string | null;
 };
 
-export type UpdateEmployeeData = TablesUpdate<'employees'> & {
+export type UpdateEmployeeData = Omit<TablesUpdate<'employees'>, 'id' | 'created_at' | 'updated_at'> & {
   organizational_unit_id?: string | null;
 };
 
@@ -45,9 +45,7 @@ class EmployeeService {
     
     const { data, error } = await supabase
       .from('employees')
-      .select(`
-        *
-      `)
+      .select(`*`)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -71,7 +69,7 @@ class EmployeeService {
     
     const { data, error } = await supabase
       .from('employees')
-      .insert(employeeData)
+      .insert(employeeData as TablesInsert<'employees'>)
       .select()
       .single();
     
@@ -89,7 +87,7 @@ class EmployeeService {
     
     const { data, error } = await supabase
       .from('employees')
-      .update(employeeData)
+      .update(employeeData as TablesUpdate<'employees'>)
       .eq('id', id)
       .select()
       .single();
