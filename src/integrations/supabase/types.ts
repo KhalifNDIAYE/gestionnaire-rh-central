@@ -263,6 +263,252 @@ export type Database = {
         }
         Relationships: []
       }
+      project_deliverables: {
+        Row: {
+          assigned_to: string[] | null
+          completed_date: string | null
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          name: string
+          priority: string
+          project_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string[] | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          name: string
+          priority?: string
+          project_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string[] | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          name?: string
+          priority?: string
+          project_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_deliverables_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_milestones: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          is_completed: boolean
+          name: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          name: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          is_completed?: boolean
+          name?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_notifications: {
+        Row: {
+          created_at: string
+          deliverable_id: string | null
+          id: string
+          is_read: boolean
+          message: string
+          project_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deliverable_id?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          project_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deliverable_id?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          project_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_notifications_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "project_deliverables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_tasks: {
+        Row: {
+          assigned_to: string[] | null
+          created_at: string
+          dependencies: string[] | null
+          description: string | null
+          duration: number
+          end_date: string
+          id: string
+          name: string
+          priority: string
+          progress: number
+          project_id: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string[] | null
+          created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          duration?: number
+          end_date: string
+          id?: string
+          name: string
+          priority?: string
+          progress?: number
+          project_id: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string[] | null
+          created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          duration?: number
+          end_date?: string
+          id?: string
+          name?: string
+          priority?: string
+          progress?: number
+          project_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          actual_cost: number
+          budget: number
+          consultants: string[] | null
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          name: string
+          project_manager: string
+          start_date: string
+          status: string
+          team: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number
+          budget?: number
+          consultants?: string[] | null
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          name: string
+          project_manager: string
+          start_date: string
+          status?: string
+          team?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number
+          budget?: number
+          consultants?: string[] | null
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          project_manager?: string
+          start_date?: string
+          status?: string
+          team?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       time_entries: {
         Row: {
           break_end: string | null

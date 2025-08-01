@@ -92,13 +92,13 @@ const TimeEntryTable = ({ entries, onEdit, onDelete }: TimeEntryTableProps) => {
                       {entry.employeeName}
                     </div>
                   </TableCell>
-                  <TableCell>{formatTime(entry.clockIn)}</TableCell>
-                  <TableCell>{formatTime(entry.clockOut)}</TableCell>
-                  <TableCell>{formatTime(entry.breakStart)}</TableCell>
-                  <TableCell>{formatTime(entry.breakEnd)}</TableCell>
+                  <TableCell>{formatTime(entry.clock_in)}</TableCell>
+                  <TableCell>{formatTime(entry.clock_out)}</TableCell>
+                  <TableCell>{formatTime(entry.break_start)}</TableCell>
+                  <TableCell>{formatTime(entry.break_end)}</TableCell>
                   <TableCell>
                     <span className="font-medium">
-                      {entry.totalHours.toFixed(1)}h
+                      {entry.total_hours ? entry.total_hours.toFixed(1) : '0.0'}h
                     </span>
                   </TableCell>
                   <TableCell>{getStatusBadge(entry.status)}</TableCell>

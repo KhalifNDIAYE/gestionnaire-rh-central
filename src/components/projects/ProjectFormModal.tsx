@@ -51,7 +51,8 @@ const ProjectFormModal = ({ open, onOpenChange, onProjectCreated }: ProjectFormM
       description: '',
       dueDate: '',
       status: 'pending',
-      priority: 'medium'
+      priority: 'medium',
+      assignedTo: []
     }]);
   };
 

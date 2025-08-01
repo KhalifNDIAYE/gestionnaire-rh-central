@@ -24,10 +24,10 @@ const TimeEntryEditModal = ({ entry, isOpen, onClose, onUpdate }: TimeEntryEditM
   useEffect(() => {
     if (entry) {
       setFormData({
-        clockIn: entry.clockIn || '',
-        clockOut: entry.clockOut || '',
-        breakStart: entry.breakStart || '',
-        breakEnd: entry.breakEnd || '',
+        clock_in: entry.clock_in || '',
+        clock_out: entry.clock_out || '',
+        break_start: entry.break_start || '',
+        break_end: entry.break_end || '',
         notes: entry.notes || ''
       });
     }
@@ -83,8 +83,8 @@ const TimeEntryEditModal = ({ entry, isOpen, onClose, onUpdate }: TimeEntryEditM
               <Input
                 id="clockIn"
                 type="time"
-                value={formData.clockIn || ''}
-                onChange={(e) => handleInputChange('clockIn', e.target.value)}
+                value={formData.clock_in || ''}
+                onChange={(e) => handleInputChange('clock_in', e.target.value)}
               />
             </div>
             <div>
@@ -92,8 +92,8 @@ const TimeEntryEditModal = ({ entry, isOpen, onClose, onUpdate }: TimeEntryEditM
               <Input
                 id="clockOut"
                 type="time"
-                value={formData.clockOut || ''}
-                onChange={(e) => handleInputChange('clockOut', e.target.value)}
+                value={formData.clock_out || ''}
+                onChange={(e) => handleInputChange('clock_out', e.target.value)}
               />
             </div>
           </div>
@@ -104,8 +104,8 @@ const TimeEntryEditModal = ({ entry, isOpen, onClose, onUpdate }: TimeEntryEditM
               <Input
                 id="breakStart"
                 type="time"
-                value={formData.breakStart || ''}
-                onChange={(e) => handleInputChange('breakStart', e.target.value)}
+                value={formData.break_start || ''}
+                onChange={(e) => handleInputChange('break_start', e.target.value)}
               />
             </div>
             <div>
@@ -113,8 +113,8 @@ const TimeEntryEditModal = ({ entry, isOpen, onClose, onUpdate }: TimeEntryEditM
               <Input
                 id="breakEnd"
                 type="time"
-                value={formData.breakEnd || ''}
-                onChange={(e) => handleInputChange('breakEnd', e.target.value)}
+                value={formData.break_end || ''}
+                onChange={(e) => handleInputChange('break_end', e.target.value)}
               />
             </div>
           </div>

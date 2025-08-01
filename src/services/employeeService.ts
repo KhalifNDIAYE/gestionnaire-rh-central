@@ -1,20 +1,54 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export type Employee = Tables<'employees'>;
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  fonction: string;
+  department: string;
+  status: string;
+  type: string;
+  start_date: string;
+  salary?: number;
+  hourly_rate?: number;
+  company?: string;
+  organizational_unit_id?: string;
+  end_date?: string;
+  created_at: string;
+  updated_at: string;
+}
 
-// Types étendus pour inclure organizational_unit_id
-export type CreateEmployeeData = Omit<TablesInsert<'employees'>, 'id' | 'created_at' | 'updated_at'> & {
-  organizational_unit_id?: string | null;
-};
+export interface CreateEmployeeData {
+  name: string;
+  email: string;
+  fonction: string;
+  department: string;
+  status?: string;
+  type?: string;
+  start_date: string;
+  salary?: number;
+  hourly_rate?: number;
+  company?: string;
+  organizational_unit_id?: string;
+  end_date?: string;
+}
 
-export type UpdateEmployeeData = Omit<TablesUpdate<'employees'>, 'id' | 'created_at' | 'updated_at'> & {
-  organizational_unit_id?: string | null;
-};
+export interface UpdateEmployeeData {
+  name?: string;
+  email?: string;
+  fonction?: string;
+  department?: string;
+  status?: string;
+  type?: string;
+  start_date?: string;
+  salary?: number;
+  hourly_rate?: number;
+  company?: string;
+  organizational_unit_id?: string;
+  end_date?: string;
+}
 
-// Type pour employé avec unité organisationnelle
 export interface EmployeeWithUnit extends Employee {
-  organizational_unit_id?: string | null;
   organizational_unit?: {
     id: string;
     name: string;
@@ -24,102 +58,77 @@ export interface EmployeeWithUnit extends Employee {
 
 class EmployeeService {
   async getAllEmployees(): Promise<Employee[]> {
-    console.log('Fetching employees from Supabase...');
-    
     const { data, error } = await supabase
       .from('employees')
       .select('*')
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching employees:', error);
       throw new Error(`Erreur lors du chargement des employés: ${error.message}`);
     }
     
-    console.log('Employees fetched successfully:', data?.length);
     return data || [];
   }
 
   async getAllEmployeesWithUnits(): Promise<EmployeeWithUnit[]> {
-    console.log('Fetching employees with organizational units from Supabase...');
-    
     const { data, error } = await supabase
       .from('employees')
       .select(`*`)
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching employees with units:', error);
       throw new Error(`Erreur lors du chargement des employés: ${error.message}`);
     }
     
-    console.log('Employees with units fetched successfully:', data?.length);
-    
-    // Convertir les données avec le bon type
     const employeesWithUnits: EmployeeWithUnit[] = (data || []).map(employee => ({
       ...employee,
-      organizational_unit: null // Pour l'instant, pas de jointure avec les unités organisationnelles
+      organizational_unit: null
     }));
     
     return employeesWithUnits;
   }
 
   async createEmployee(employeeData: CreateEmployeeData): Promise<Employee> {
-    console.log('Creating employee:', employeeData);
-    
     const { data, error } = await supabase
       .from('employees')
-      .insert(employeeData as TablesInsert<'employees'>)
+      .insert(employeeData)
       .select()
       .single();
     
     if (error) {
-      console.error('Error creating employee:', error);
       throw new Error(`Erreur lors de la création de l'employé: ${error.message}`);
     }
     
-    console.log('Employee created successfully:', data);
     return data;
   }
 
   async updateEmployee(id: string, employeeData: UpdateEmployeeData): Promise<Employee> {
-    console.log('Updating employee:', id, employeeData);
-    
     const { data, error } = await supabase
       .from('employees')
-      .update(employeeData as TablesUpdate<'employees'>)
+      .update(employeeData)
       .eq('id', id)
       .select()
       .single();
     
     if (error) {
-      console.error('Error updating employee:', error);
       throw new Error(`Erreur lors de la mise à jour de l'employé: ${error.message}`);
     }
     
-    console.log('Employee updated successfully:', data);
     return data;
   }
 
   async deleteEmployee(id: string): Promise<void> {
-    console.log('Deleting employee:', id);
-    
     const { error } = await supabase
       .from('employees')
       .delete()
       .eq('id', id);
     
     if (error) {
-      console.error('Error deleting employee:', error);
       throw new Error(`Erreur lors de la suppression de l'employé: ${error.message}`);
     }
-    
-    console.log('Employee deleted successfully');
   }
 
   async getEmployeeById(id: string): Promise<Employee | null> {
-    console.log('Fetching employee by ID:', id);
-    
     const { data, error } = await supabase
       .from('employees')
       .select('*')
@@ -127,7 +136,6 @@ class EmployeeService {
       .maybeSingle();
     
     if (error) {
-      console.error('Error fetching employee by ID:', error);
       throw new Error(`Erreur lors de la récupération de l'employé: ${error.message}`);
     }
     
@@ -135,8 +143,6 @@ class EmployeeService {
   }
 
   async getEmployeesByDepartment(department: string): Promise<Employee[]> {
-    console.log('Fetching employees by department:', department);
-    
     const { data, error } = await supabase
       .from('employees')
       .select('*')
@@ -144,7 +150,6 @@ class EmployeeService {
       .order('name');
     
     if (error) {
-      console.error('Error fetching employees by department:', error);
       throw new Error(`Erreur lors de la récupération des employés par département: ${error.message}`);
     }
     
@@ -152,8 +157,6 @@ class EmployeeService {
   }
 
   async getEmployeesByStatus(status: 'active' | 'inactive'): Promise<Employee[]> {
-    console.log('Fetching employees by status:', status);
-    
     const { data, error } = await supabase
       .from('employees')
       .select('*')
@@ -161,7 +164,6 @@ class EmployeeService {
       .order('name');
     
     if (error) {
-      console.error('Error fetching employees by status:', error);
       throw new Error(`Erreur lors de la récupération des employés par statut: ${error.message}`);
     }
     
@@ -169,8 +171,6 @@ class EmployeeService {
   }
 
   async getEmployeesByType(type: 'employee' | 'consultant'): Promise<Employee[]> {
-    console.log('Fetching employees by type:', type);
-    
     const { data, error } = await supabase
       .from('employees')
       .select('*')
@@ -178,7 +178,6 @@ class EmployeeService {
       .order('name');
     
     if (error) {
-      console.error('Error fetching employees by type:', error);
       throw new Error(`Erreur lors de la récupération des employés par type: ${error.message}`);
     }
     
@@ -186,8 +185,6 @@ class EmployeeService {
   }
 
   async getEmployeesByOrganizationalUnit(unitId: string): Promise<Employee[]> {
-    console.log('Fetching employees by organizational unit:', unitId);
-    
     const { data, error } = await supabase
       .from('employees')
       .select('*')
@@ -195,7 +192,6 @@ class EmployeeService {
       .order('name');
     
     if (error) {
-      console.error('Error fetching employees by organizational unit:', error);
       throw new Error(`Erreur lors de la récupération des employés par unité: ${error.message}`);
     }
     
