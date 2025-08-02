@@ -12,7 +12,6 @@ export interface Employee {
   salary?: number;
   hourly_rate?: number;
   company?: string;
-  organizational_unit_id?: string;
   end_date?: string;
   created_at: string;
   updated_at: string;
@@ -29,7 +28,6 @@ export interface CreateEmployeeData {
   salary?: number;
   hourly_rate?: number;
   company?: string;
-  organizational_unit_id?: string;
   end_date?: string;
 }
 
@@ -44,7 +42,6 @@ export interface UpdateEmployeeData {
   salary?: number;
   hourly_rate?: number;
   company?: string;
-  organizational_unit_id?: string;
   end_date?: string;
 }
 
@@ -184,15 +181,15 @@ class EmployeeService {
     return data || [];
   }
 
-  async getEmployeesByOrganizationalUnit(unitId: string): Promise<Employee[]> {
+  async getEmployeesByDepartmentUnit(department: string): Promise<Employee[]> {
     const { data, error } = await supabase
       .from('employees')
       .select('*')
-      .eq('organizational_unit_id', unitId)
+      .eq('department', department)
       .order('name');
     
     if (error) {
-      throw new Error(`Erreur lors de la récupération des employés par unité: ${error.message}`);
+      throw new Error(`Erreur lors de la récupération des employés par département: ${error.message}`);
     }
     
     return data || [];

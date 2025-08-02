@@ -49,8 +49,7 @@ const EmployeeFormModal = ({
         ...data,
         start_date: data.start_date,
         salary: data.type === 'employee' ? (data.salary || 0) : 0,
-        status: data.status || 'active',
-        organizational_unit_id: data.organizational_unit_id || null
+        status: data.status || 'active'
       };
 
       await employeeService.createEmployee(employeeData);

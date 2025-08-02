@@ -24,7 +24,7 @@ const OrgChart = ({ units, onUnitClick }: OrgChartProps) => {
     
     for (const unit of units) {
       try {
-        const employees = await employeeService.getEmployeesByOrganizationalUnit(unit.id);
+        const employees = await employeeService.getEmployeesByDepartmentUnit(unit.name);
         counts[unit.id] = employees.length;
       } catch (error) {
         console.error(`Erreur lors du chargement des employés pour l'unité ${unit.id}:`, error);

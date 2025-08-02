@@ -65,8 +65,7 @@ const EmployeeEditModal = ({ employee, open, onOpenChange, onEmployeeUpdated }: 
 
     try {
       const updateData: UpdateEmployeeData = {
-        ...data,
-        organizational_unit_id: data.organizational_unit_id || null
+        ...data
       };
       
       await employeeService.updateEmployee(employee.id, updateData);
