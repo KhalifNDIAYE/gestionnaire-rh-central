@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react'
 import { vi } from 'vitest'
-import { render, RenderOptions } from '@testing-library/react'
+import { render as rtlRender, RenderOptions } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/sonner'
@@ -41,9 +41,9 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
 const customRender = (
   ui: ReactElement,
   options?: Omit<RenderOptions, 'wrapper'>,
-) => render(ui, { wrapper: AllTheProviders, ...options })
+) => rtlRender(ui, { wrapper: AllTheProviders, ...options })
 
-// Re-export everything from testing library
+// Re-export everything
 export * from '@testing-library/react'
 export { default as userEvent } from '@testing-library/user-event'
 
