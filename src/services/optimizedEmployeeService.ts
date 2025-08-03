@@ -63,7 +63,7 @@ class OptimizedEmployeeService {
 
   async getEmployeesInfinite(
     pageParam = 0,
-    filters: Omit<PaginationParams, 'page'> = {}
+    filters: Partial<Omit<PaginationParams, 'page'>> = {}
   ): Promise<{ employees: Employee[]; nextPage?: number }> {
     const limit = filters.limit || this.PAGE_SIZE
     const offset = pageParam * limit
@@ -124,7 +124,7 @@ class OptimizedEmployeeService {
 
     const { data, error } = await supabase
       .from('employees')
-      .select('id, name, email, fonction, department')
+      .select('*')
       .or(`name.ilike.%${query}%,email.ilike.%${query}%,fonction.ilike.%${query}%`)
       .limit(limit)
 

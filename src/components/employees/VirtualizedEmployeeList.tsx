@@ -78,7 +78,7 @@ export const VirtualizedEmployeeList: React.FC<VirtualizedEmployeeListProps> = (
   } = useInfiniteQuery({
     queryKey: queryKeys.employees.list(filters),
     queryFn: ({ pageParam = 0 }) => 
-      optimizedEmployeeService.getEmployeesInfinite(pageParam as number, filters),
+      optimizedEmployeeService.getEmployeesInfinite(pageParam as number, { ...filters, limit: 20 }),
     getNextPageParam: (lastPage: any) => lastPage.nextPage,
     initialPageParam: 0,
     staleTime: 5 * 60 * 1000, // 5 minutes

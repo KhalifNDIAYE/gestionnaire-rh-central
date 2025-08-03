@@ -67,17 +67,17 @@ export const PageLoadingSkeleton = () => (
 )
 
 // HOC pour wrapper les pages lazy avec suspense
-export const withLazyLoading = <P extends object>(
+export const withLazyLoading = <P extends Record<string, any> = Record<string, never>>(
   LazyComponent: React.LazyExoticComponent<React.ComponentType<P>>,
   fallback?: React.ComponentType
 ) => {
   const WrappedComponent = (props: P) => (
     <Suspense fallback={fallback ? React.createElement(fallback) : <PageLoadingSkeleton />}>
-      <LazyComponent {...props} />
+      <LazyComponent {...(props as any)} />
     </Suspense>
   )
   
-  WrappedComponent.displayName = `withLazyLoading(${LazyComponent.displayName || 'Component'})`
+  WrappedComponent.displayName = `withLazyLoading(Component)`
   
   return WrappedComponent
 }
