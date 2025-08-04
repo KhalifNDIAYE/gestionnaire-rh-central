@@ -49,7 +49,11 @@ const customRender = (
 
 // Re-export everything from @testing-library/react (which includes screen, waitFor, etc.)
 export * from '@testing-library/react'
-export { userEvent }
+export { userEvent, vi }
+
+// Import and re-export test globals
+import { expect, describe, it } from 'vitest'
+export { expect, describe, it }
 
 // Override render method
 export { customRender as render }

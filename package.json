@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@hookform/resolvers": "^3.9.0",
     "@playwright/test": "^1.54.2",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -57,6 +58,7 @@
     "embla-carousel-react": "^8.3.0",
     "idb": "^8.0.3",
     "input-otp": "^1.2.4",
+    "jest-axe": "^10.0.0",
     "jsdom": "^26.1.0",
     "lucide-react": "^0.462.0",
     "msw": "^2.10.4",
