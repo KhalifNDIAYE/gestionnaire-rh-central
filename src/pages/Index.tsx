@@ -1,25 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
 import { CustomizableDashboard } from '../components/dashboard/CustomizableDashboard';
-import EmployeesPage from './EmployeesPage';
-import FunctionsPage from './FunctionsPage';
-import ProjectsPage from './ProjectsPage';
-import LeaveRequestsPage from './LeaveRequestsPage';
-import PayrollPage from './PayrollPage';
-import MemorandumPage from './MemorandumPage';
-import OrganigrammePage from './OrganigrammePage';
-import ProfilePage from './ProfilePage';
-import SettingsPage from './SettingsPage';
-import DirectoryPage from './DirectoryPage';
-import CommunicationPage from './CommunicationPage';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 import PublicPortal from '../components/portal/PublicPortal';
 
-// Lazy load pour le module de calcul des salaires
-const SalaryCalculationPage = React.lazy(() => import('./SalaryCalculationPage'));
-const TimeTrackingPage = React.lazy(() => import('./TimeTrackingPage'));
+// Lazy loading des pages pour optimiser le bundle
+import {
+  EmployeesPage,
+  FunctionsPage,
+  ProjectsPage,
+  LeaveRequestsPage,
+  PayrollPage,
+  MemorandumPage,
+  OrganigrammePage,
+  ProfilePage,
+  SettingsPage,
+  DirectoryPage,
+  CommunicationPage,
+  SalaryCalculationPage,
+  TimeTrackingPage
+} from '../components/lazy/LazyPageImports';
+
+const LoadingFallback = () => (
+  <div className="p-6 flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <span className="ml-2">Chargement...</span>
+  </div>
+);
 
 const AppContent = () => {
   const { user } = useAuth();
@@ -59,43 +68,83 @@ const AppContent = () => {
       case 'dashboard':
         return <CustomizableDashboard />;
       case 'employees':
-        return <EmployeesPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <EmployeesPage />
+          </Suspense>
+        );
       case 'functions':
-        return <FunctionsPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <FunctionsPage />
+          </Suspense>
+        );
       case 'projects':
-        return <ProjectsPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <ProjectsPage />
+          </Suspense>
+        );
       case 'leave-requests':
-        return <LeaveRequestsPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LeaveRequestsPage />
+          </Suspense>
+        );
       case 'payroll':
-        return <PayrollPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <PayrollPage />
+          </Suspense>
+        );
       case 'memorandum':
-        return <MemorandumPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <MemorandumPage />
+          </Suspense>
+        );
       case 'organigramme':
-        return <OrganigrammePage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <OrganigrammePage />
+          </Suspense>
+        );
       case 'directory':
-        return <DirectoryPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <DirectoryPage />
+          </Suspense>
+        );
       case 'communication':
         return (
-          <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
+          <Suspense fallback={<LoadingFallback />}>
             <CommunicationPage />
-          </React.Suspense>
+          </Suspense>
         );
       case 'salary':
         return (
-          <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
+          <Suspense fallback={<LoadingFallback />}>
             <SalaryCalculationPage />
-          </React.Suspense>
+          </Suspense>
         );
       case 'profile':
-        return <ProfilePage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <ProfilePage />
+          </Suspense>
+        );
       case 'time-tracking':
         return (
-          <React.Suspense fallback={<div className="p-6">Chargement...</div>}>
+          <Suspense fallback={<LoadingFallback />}>
             <TimeTrackingPage />
-          </React.Suspense>
+          </Suspense>
         );
       case 'settings':
-        return <SettingsPage />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <SettingsPage />
+          </Suspense>
+        );
       default:
         return <CustomizableDashboard />;
     }

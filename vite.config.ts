@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB limite
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\./,
@@ -56,5 +57,18 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-tooltip', '@radix-ui/react-dialog', '@radix-ui/react-select'],
+          charts: ['recharts'],
+          query: ['@tanstack/react-query'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
   },
 }));
