@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import LoginForm from '../components/auth/LoginForm';
-import Dashboard from '../components/dashboard/Dashboard';
+import { CustomizableDashboard } from '../components/dashboard/CustomizableDashboard';
 import EmployeesPage from './EmployeesPage';
 import FunctionsPage from './FunctionsPage';
 import ProjectsPage from './ProjectsPage';
@@ -57,7 +57,7 @@ const AppContent = () => {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <CustomizableDashboard />;
       case 'employees':
         return <EmployeesPage />;
       case 'functions':
@@ -97,7 +97,7 @@ const AppContent = () => {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <Dashboard />;
+        return <CustomizableDashboard />;
     }
   };
 

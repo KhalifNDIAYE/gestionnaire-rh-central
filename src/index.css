@@ -34,6 +34,18 @@
 
     --radius: 0.5rem;
 
+    /* Couleurs de thème personnalisables */
+    --theme-primary: var(--primary);
+    --theme-accent: var(--accent);
+    --theme-background: var(--background);
+
+    /* Variables pour les graphiques */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -87,6 +99,13 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Variables sombres pour les graphiques */
+    --chart-1: 220 70% 70%;
+    --chart-2: 160 60% 65%;
+    --chart-3: 30 80% 75%;
+    --chart-4: 280 65% 80%;
+    --chart-5: 340 75% 75%;
   }
 }
 
