@@ -1,6 +1,7 @@
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
@@ -15,4 +16,26 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Initialiser Sentry
+import { initSentry } from "./lib/monitoring";
+initSentry();
+
+// Initialiser les analytics privacy-friendly
+import { analytics } from "./lib/analytics";
+analytics.requestConsent().then(() => {
+  console.log('Analytics initialized');
+});
+
+// Initialiser le monitoring de performance
+import { performanceMonitor } from "./lib/performance";
+performanceMonitor.measureBundleSize();
+
+// Initialiser les logs structurés
+import { logger } from "./lib/logging";
+logger.info('Application starting', { version: '1.0.0' }, 'Main');
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);

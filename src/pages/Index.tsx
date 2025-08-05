@@ -30,6 +30,13 @@ const LoadingFallback = () => (
   </div>
 );
 
+// Lazy load du dashboard de monitoring
+const MonitoringDashboard = React.lazy(() => 
+  import('../components/monitoring/MonitoringDashboard').then(module => ({ 
+    default: module.MonitoringDashboard 
+  }))
+);
+
 const AppContent = () => {
   const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -143,6 +150,12 @@ const AppContent = () => {
         return (
           <Suspense fallback={<LoadingFallback />}>
             <SettingsPage />
+          </Suspense>
+        );
+      case 'monitoring':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <MonitoringDashboard />
           </Suspense>
         );
       default:

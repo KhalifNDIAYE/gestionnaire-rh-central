@@ -58,6 +58,7 @@ const menuItems: MenuItem[] = [
   
   // PARAMETRAGES
   { id: 'settings', label: 'Paramètres', icon: Settings, roles: ['admin'], group: 'parametrages' },
+  { id: 'monitoring', label: 'Monitoring', icon: ChevronDown, roles: ['admin'], group: 'parametrages' },
 ];
 
 const menuGroups = {
