@@ -1,0 +1,287 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, staging ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Tests et qualité du code
+  test:
+    name: Tests & Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Run type checking
+      run: npm run type-check
+      
+    - name: Run unit tests
+      run: npm run test:unit
+      
+    - name: Run E2E tests
+      run: npm run test:e2e
+      
+    - name: Run accessibility tests
+      run: npm run test:accessibility
+      
+    - name: Generate test coverage
+      run: npm run test:coverage
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Build de l'application
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build for ${{ matrix.environment }}
+      run: npm run build:${{ matrix.environment }}
+      env:
+        VITE_ENVIRONMENT: ${{ matrix.environment }}
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-${{ matrix.environment }}
+        path: dist/
+        retention-days: 7
+
+  # Déploiement sur staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/staging'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-staging
+        path: dist/
+        
+    - name: Deploy to Vercel Staging
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        working-directory: ./
+        scope: ${{ secrets.VERCEL_ORG_ID }}
+        alias-domains: staging.yourapp.com
+        
+    - name: Run smoke tests on staging
+      run: |
+        npm run test:smoke -- --baseUrl=https://staging.yourapp.com
+        
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+
+  # Déploiement sur production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy-staging]
+    if: github.ref == 'refs/heads/main'
+    environment: 
+      name: production
+      url: https://yourapp.com
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-production
+        path: dist/
+        
+    - name: Create deployment backup
+      run: |
+        echo "Creating backup of current production deployment"
+        curl -X POST "${{ secrets.BACKUP_WEBHOOK_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.BACKUP_TOKEN }}" \
+          -d '{"action": "backup", "environment": "production"}'
+        
+    - name: Deploy to Vercel Production
+      id: deploy
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: '--prod'
+        working-directory: ./
+        scope: ${{ secrets.VERCEL_ORG_ID }}
+        
+    - name: Wait for deployment
+      run: sleep 30
+      
+    - name: Run production health checks
+      id: health-check
+      run: |
+        npm run test:health -- --baseUrl=https://yourapp.com
+        
+    - name: Rollback on failure
+      if: failure() && steps.health-check.outcome == 'failure'
+      run: |
+        echo "Health checks failed, initiating rollback"
+        curl -X POST "${{ secrets.ROLLBACK_WEBHOOK_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.ROLLBACK_TOKEN }}" \
+          -d '{"action": "rollback", "environment": "production"}'
+        exit 1
+        
+    - name: Update monitoring
+      run: |
+        curl -X POST "${{ secrets.MONITORING_WEBHOOK_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.MONITORING_TOKEN }}" \
+          -d '{
+            "action": "deployment_success",
+            "environment": "production",
+            "version": "${{ github.sha }}",
+            "url": "https://yourapp.com"
+          }'
+          
+    - name: Notify successful deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+        text: '🚀 Production deployment successful!'
+
+  # Job de rollback manuel
+  rollback:
+    name: Manual Rollback
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Get previous deployment
+      id: previous
+      run: |
+        PREVIOUS_SHA=$(git rev-parse HEAD~1)
+        echo "previous-sha=$PREVIOUS_SHA" >> $GITHUB_OUTPUT
+        
+    - name: Rollback deployment
+      run: |
+        curl -X POST "${{ secrets.ROLLBACK_WEBHOOK_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.ROLLBACK_TOKEN }}" \
+          -d '{
+            "action": "rollback",
+            "environment": "${{ github.event.inputs.environment }}",
+            "target_sha": "${{ steps.previous.outputs.previous-sha }}"
+          }'
+          
+    - name: Verify rollback
+      run: |
+        sleep 30
+        npm run test:health -- --baseUrl=https://${{ github.event.inputs.environment }}.yourapp.com
+        
+    - name: Notify rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        text: '⚠️ Rollback executed for ${{ github.event.inputs.environment }}'
+
+  # Monitoring et alertes
+  post-deployment:
+    name: Post-Deployment Monitoring
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: success()
+    
+    steps:
+    - name: Setup monitoring alerts
+      run: |
+        curl -X POST "${{ secrets.MONITORING_WEBHOOK_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.MONITORING_TOKEN }}" \
+          -d '{
+            "action": "setup_alerts",
+            "environment": "production",
+            "version": "${{ github.sha }}"
+          }'
+          
+    - name: Schedule health check job
+      run: |
+        curl -X POST "${{ secrets.SCHEDULER_WEBHOOK_URL }}" \
+          -H "Authorization: Bearer ${{ secrets.SCHEDULER_TOKEN }}" \
+          -d '{
+            "action": "schedule_health_checks",
+            "environment": "production",
+            "interval": "5m",
+            "duration": "24h"
+          }'
