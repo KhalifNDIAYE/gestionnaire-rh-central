@@ -16,9 +16,13 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Initialiser Sentry
+// Initialiser Sentry de manière asynchrone
 import { initSentry } from "./lib/monitoring";
-initSentry();
+initSentry().then(() => {
+  console.log('Sentry initialized successfully');
+}).catch((error) => {
+  console.error('Failed to initialize Sentry:', error);
+});
 
 // Initialiser les analytics privacy-friendly
 import { analytics } from "./lib/analytics";

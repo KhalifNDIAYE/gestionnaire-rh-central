@@ -1,23 +1,27 @@
 import * as Sentry from "@sentry/react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Configuration Sentry
-export const initSentry = () => {
-  // Récupérer la clé DSN depuis les variables d'environnement Supabase
-  const sentryDsn = process.env.SENTRY_DSN;
-  
-  if (!sentryDsn) {
-    console.warn('Sentry DSN not configured');
-    return;
-  }
+export const initSentry = async () => {
+  try {
+    // Récupérer la configuration depuis Supabase
+    const { data, error } = await supabase.functions.invoke('get-monitoring-config');
+    
+    if (error || !data?.success) {
+      console.warn('Sentry configuration not available:', error?.message || data?.error);
+      return;
+    }
 
-  Sentry.init({
-    dsn: sentryDsn,
-    integrations: [
-      Sentry.browserTracingIntegration(),
-    ],
-    environment: process.env.NODE_ENV || 'development',
-    // Performance monitoring
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    const { sentryDsn, environment } = data.config;
+
+    Sentry.init({
+      dsn: sentryDsn,
+      integrations: [
+        Sentry.browserTracingIntegration(),
+      ],
+      environment,
+      // Performance monitoring
+      tracesSampleRate: environment === 'production' ? 0.1 : 1.0,
     // Session replay (optionnel)
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
@@ -38,7 +42,10 @@ export const initSentry = () => {
         component: "react-app"
       }
     }
-  });
+    });
+  } catch (error) {
+    console.error('Failed to initialize Sentry:', error);
+  }
 };
 
 // Wrapper pour capturer les erreurs React
