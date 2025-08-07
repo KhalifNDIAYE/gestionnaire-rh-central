@@ -1,0 +1,719 @@
+openapi: 3.0.3
+info:
+  title: API de Gestion RH
+  description: |
+    API complète pour la gestion des ressources humaines incluant :
+    - Gestion des employés
+    - Suivi du temps de travail
+    - Demandes de congés
+    - Projets et tâches
+    - Calculs de salaire
+    - Organigramme
+    
+    ## Authentification
+    L'API utilise l'authentification Bearer Token via Supabase Auth.
+    
+    ## Codes d'erreur
+    - `400` - Requête invalide
+    - `401` - Non autorisé
+    - `403` - Interdit
+    - `404` - Ressource non trouvée
+    - `500` - Erreur serveur
+    
+  version: 1.0.0
+  contact:
+    name: Support API
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://your-project.supabase.co/rest/v1
+    description: Production
+  - url: http://localhost:54321/rest/v1
+    description: Développement local
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Employee:
+      type: object
+      required:
+        - id
+        - nom
+        - prenom
+        - email
+        - poste
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifiant unique de l'employé
+        nom:
+          type: string
+          description: Nom de famille
+          example: "Dupont"
+        prenom:
+          type: string
+          description: Prénom
+          example: "Jean"
+        email:
+          type: string
+          format: email
+          description: Adresse email
+          example: "jean.dupont@example.com"
+        telephone:
+          type: string
+          description: Numéro de téléphone
+          example: "+33 1 23 45 67 89"
+        poste:
+          type: string
+          description: Intitulé du poste
+          example: "Développeur Full Stack"
+        departement:
+          type: string
+          description: Département
+          example: "IT"
+        date_embauche:
+          type: string
+          format: date
+          description: Date d'embauche
+        salaire:
+          type: number
+          format: decimal
+          description: Salaire mensuel
+        manager_id:
+          type: string
+          format: uuid
+          description: ID du manager
+        statut:
+          type: string
+          enum: [actif, inactif, conge]
+          description: Statut de l'employé
+        created_at:
+          type: string
+          format: date-time
+          description: Date de création
+        updated_at:
+          type: string
+          format: date-time
+          description: Date de dernière modification
+
+    TimeEntry:
+      type: object
+      required:
+        - id
+        - employee_id
+        - date
+        - heures_travaillees
+      properties:
+        id:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+          description: ID de l'employé
+        date:
+          type: string
+          format: date
+          description: Date de travail
+        heure_debut:
+          type: string
+          format: time
+          description: Heure de début
+        heure_fin:
+          type: string
+          format: time
+          description: Heure de fin
+        heures_travaillees:
+          type: number
+          format: decimal
+          description: Nombre d'heures travaillées
+        description:
+          type: string
+          description: Description des tâches
+        projet_id:
+          type: string
+          format: uuid
+          description: ID du projet associé
+        approuve:
+          type: boolean
+          description: Statut d'approbation
+        created_at:
+          type: string
+          format: date-time
+
+    LeaveRequest:
+      type: object
+      required:
+        - id
+        - employee_id
+        - type_conge
+        - date_debut
+        - date_fin
+      properties:
+        id:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+          format: uuid
+        type_conge:
+          type: string
+          enum: [conge_paye, maladie, formation, autre]
+          description: Type de congé
+        date_debut:
+          type: string
+          format: date
+          description: Date de début du congé
+        date_fin:
+          type: string
+          format: date
+          description: Date de fin du congé
+        motif:
+          type: string
+          description: Motif du congé
+        statut:
+          type: string
+          enum: [en_attente, approuve, refuse]
+          description: Statut de la demande
+        approuve_par:
+          type: string
+          format: uuid
+          description: ID de la personne qui a approuvé
+        commentaire_approbation:
+          type: string
+          description: Commentaire d'approbation
+        created_at:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      required:
+        - id
+        - nom
+        - statut
+      properties:
+        id:
+          type: string
+          format: uuid
+        nom:
+          type: string
+          description: Nom du projet
+        description:
+          type: string
+          description: Description du projet
+        date_debut:
+          type: string
+          format: date
+        date_fin_prevue:
+          type: string
+          format: date
+        budget:
+          type: number
+          format: decimal
+        chef_projet_id:
+          type: string
+          format: uuid
+          description: ID du chef de projet
+        statut:
+          type: string
+          enum: [planifie, en_cours, termine, annule]
+        priorite:
+          type: string
+          enum: [basse, moyenne, haute, urgente]
+        progression:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Pourcentage de progression
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Message d'erreur
+        code:
+          type: string
+          description: Code d'erreur
+        details:
+          type: object
+          description: Détails supplémentaires
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        total:
+          type: integer
+          description: Nombre total d'éléments
+        page:
+          type: integer
+          description: Page actuelle
+        limit:
+          type: integer
+          description: Nombre d'éléments par page
+        has_more:
+          type: boolean
+          description: Indique s'il y a plus de pages
+
+paths:
+  /employees:
+    get:
+      summary: Liste des employés
+      description: Récupère la liste paginée des employés
+      tags:
+        - Employés
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Numéro de page
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Nombre d'éléments par page
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Recherche par nom, prénom ou email
+        - name: departement
+          in: query
+          schema:
+            type: string
+          description: Filtrer par département
+        - name: statut
+          in: query
+          schema:
+            type: string
+            enum: [actif, inactif, conge]
+          description: Filtrer par statut
+      responses:
+        '200':
+          description: Liste des employés
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Employee'
+        '401':
+          description: Non autorisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Créer un employé
+      description: Crée un nouvel employé
+      tags:
+        - Employés
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nom
+                - prenom
+                - email
+                - poste
+              properties:
+                nom:
+                  type: string
+                prenom:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                telephone:
+                  type: string
+                poste:
+                  type: string
+                departement:
+                  type: string
+                date_embauche:
+                  type: string
+                  format: date
+                salaire:
+                  type: number
+                manager_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Employé créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /employees/{id}:
+    get:
+      summary: Détails d'un employé
+      description: Récupère les détails d'un employé par son ID
+      tags:
+        - Employés
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Détails de l'employé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '404':
+          description: Employé non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Modifier un employé
+      description: Met à jour les informations d'un employé
+      tags:
+        - Employés
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nom:
+                  type: string
+                prenom:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                telephone:
+                  type: string
+                poste:
+                  type: string
+                departement:
+                  type: string
+                salaire:
+                  type: number
+                manager_id:
+                  type: string
+                  format: uuid
+                statut:
+                  type: string
+                  enum: [actif, inactif, conge]
+      responses:
+        '200':
+          description: Employé modifié avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '404':
+          description: Employé non trouvé
+
+    delete:
+      summary: Supprimer un employé
+      description: Supprime un employé (soft delete)
+      tags:
+        - Employés
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Employé supprimé avec succès
+        '404':
+          description: Employé non trouvé
+
+  /time-entries:
+    get:
+      summary: Liste des entrées de temps
+      description: Récupère les entrées de temps avec filtres
+      tags:
+        - Temps de travail
+      parameters:
+        - name: employee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par employé
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Date de début de la période
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Date de fin de la période
+        - name: projet_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrer par projet
+      responses:
+        '200':
+          description: Liste des entrées de temps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeEntry'
+
+    post:
+      summary: Enregistrer du temps
+      description: Enregistre une nouvelle entrée de temps
+      tags:
+        - Temps de travail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employee_id
+                - date
+                - heures_travaillees
+              properties:
+                employee_id:
+                  type: string
+                  format: uuid
+                date:
+                  type: string
+                  format: date
+                heure_debut:
+                  type: string
+                  format: time
+                heure_fin:
+                  type: string
+                  format: time
+                heures_travaillees:
+                  type: number
+                  format: decimal
+                description:
+                  type: string
+                projet_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Entrée de temps créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeEntry'
+
+  /leave-requests:
+    get:
+      summary: Liste des demandes de congé
+      description: Récupère les demandes de congé
+      tags:
+        - Congés
+      parameters:
+        - name: employee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: statut
+          in: query
+          schema:
+            type: string
+            enum: [en_attente, approuve, refuse]
+        - name: type_conge
+          in: query
+          schema:
+            type: string
+            enum: [conge_paye, maladie, formation, autre]
+      responses:
+        '200':
+          description: Liste des demandes de congé
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveRequest'
+
+    post:
+      summary: Créer une demande de congé
+      description: Soumet une nouvelle demande de congé
+      tags:
+        - Congés
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employee_id
+                - type_conge
+                - date_debut
+                - date_fin
+              properties:
+                employee_id:
+                  type: string
+                  format: uuid
+                type_conge:
+                  type: string
+                  enum: [conge_paye, maladie, formation, autre]
+                date_debut:
+                  type: string
+                  format: date
+                date_fin:
+                  type: string
+                  format: date
+                motif:
+                  type: string
+      responses:
+        '201':
+          description: Demande créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+
+  /projects:
+    get:
+      summary: Liste des projets
+      description: Récupère la liste des projets
+      tags:
+        - Projets
+      parameters:
+        - name: statut
+          in: query
+          schema:
+            type: string
+            enum: [planifie, en_cours, termine, annule]
+        - name: chef_projet_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des projets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+
+    post:
+      summary: Créer un projet
+      description: Crée un nouveau projet
+      tags:
+        - Projets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nom
+                - statut
+              properties:
+                nom:
+                  type: string
+                description:
+                  type: string
+                date_debut:
+                  type: string
+                  format: date
+                date_fin_prevue:
+                  type: string
+                  format: date
+                budget:
+                  type: number
+                chef_projet_id:
+                  type: string
+                  format: uuid
+                statut:
+                  type: string
+                  enum: [planifie, en_cours, termine, annule]
+                priorite:
+                  type: string
+                  enum: [basse, moyenne, haute, urgente]
+      responses:
+        '201':
+          description: Projet créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+tags:
+  - name: Employés
+    description: Gestion des employés
+  - name: Temps de travail
+    description: Suivi du temps et pointage
+  - name: Congés
+    description: Gestion des demandes de congé
+  - name: Projets
+    description: Gestion des projets et tâches
