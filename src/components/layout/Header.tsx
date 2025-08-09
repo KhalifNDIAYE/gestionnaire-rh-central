@@ -113,12 +113,12 @@ const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
               >
                 <Avatar className="w-8 h-8">
                   <AvatarFallback>
-                    {user?.name?.substring(0, 2).toUpperCase()}
+                    {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block text-left">
                   <div className="text-sm font-medium">{user?.name}</div>
-                  <div className="text-xs text-muted-foreground">{user?.fonction}</div>
+                  <div className="text-xs text-gray-500">{user?.fonction}</div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -138,7 +138,7 @@ const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={logout} 
-                className="text-destructive"
+                className="text-red-600"
                 role="menuitem"
               >
                 <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
