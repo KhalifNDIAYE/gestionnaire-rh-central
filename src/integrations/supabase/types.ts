@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounting_integrations: {
+        Row: {
+          created_at: string
+          credentials: Json
+          id: string
+          last_sync: string | null
+          provider: string
+          sync_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credentials: Json
+          id?: string
+          last_sync?: string | null
+          provider: string
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credentials?: Json
+          id?: string
+          last_sync?: string | null
+          provider?: string
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -56,6 +86,36 @@ export type Database = {
           success?: boolean
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      calendar_integrations: {
+        Row: {
+          calendar_id: string | null
+          created_at: string
+          credentials: Json
+          id: string
+          provider: string
+          sync_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          calendar_id?: string | null
+          created_at?: string
+          credentials: Json
+          id?: string
+          provider: string
+          sync_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          calendar_id?: string | null
+          created_at?: string
+          credentials?: Json
+          id?: string
+          provider?: string
+          sync_enabled?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
@@ -147,6 +207,7 @@ export type Database = {
           status: string
           type: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           company?: string | null
@@ -163,6 +224,7 @@ export type Database = {
           status?: string
           type?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           company?: string | null
@@ -179,8 +241,17 @@ export type Database = {
           status?: string
           type?: string
           updated_at?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_functions: {
         Row: {
@@ -304,6 +375,83 @@ export type Database = {
           status?: string
           target_audience?: string[] | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organizational_units: {
+        Row: {
+          color: string
+          created_at: string
+          description: string
+          employees: string[] | null
+          id: string
+          level: number
+          manager_id: string | null
+          manager_name: string | null
+          name: string
+          parent_id: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string
+          employees?: string[] | null
+          id?: string
+          level?: number
+          manager_id?: string | null
+          manager_name?: string | null
+          name: string
+          parent_id?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string
+          employees?: string[] | null
+          id?: string
+          level?: number
+          manager_id?: string | null
+          manager_name?: string | null
+          name?: string
+          parent_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizational_units_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "organizational_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          must_change_password: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          must_change_password?: boolean
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          must_change_password?: boolean
+          role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
         }
         Relationships: []
@@ -714,6 +862,39 @@ export type Database = {
           },
         ]
       }
+      webhook_configs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          events: string[]
+          id: string
+          name: string
+          secret: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          events: string[]
+          id?: string
+          name: string
+          secret?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          events?: string[]
+          id?: string
+          name?: string
+          secret?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -727,9 +908,25 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
+      is_admin_or_higher: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "admin" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -856,6 +1053,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "admin", "employee"],
+    },
   },
 } as const
