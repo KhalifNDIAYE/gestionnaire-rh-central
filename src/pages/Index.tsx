@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSupabaseAuth } from '../contexts/SupabaseAuthContext';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import { CustomizableDashboard } from '../components/dashboard/CustomizableDashboard';
@@ -39,7 +39,7 @@ const MonitoringDashboard = React.lazy(() =>
 );
 
 const AppContent = () => {
-  const { user, profile, loading } = useSupabaseAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -182,7 +182,11 @@ const AppContent = () => {
 };
 
 const Index = () => {
-  return <AppContent />;
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 };
 
 export default Index;

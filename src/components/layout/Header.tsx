@@ -1,5 +1,5 @@
 
-import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -29,7 +29,7 @@ const pageMapping: Record<string, { title: string; category?: string }> = {
 };
 
 const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
-  const { user, profile, signOut } = useSupabaseAuth();
+  const { user, logout } = useAuth();
   const currentPage = pageMapping[activeItem];
 
   const getBreadcrumb = () => {
@@ -107,18 +107,18 @@ const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
               <Button 
                 variant="ghost" 
                 className="flex items-center space-x-2"
-                aria-label={`Menu utilisateur pour ${user?.email}`}
+                aria-label={`Menu utilisateur pour ${user?.name}`}
                 aria-haspopup="true"
                 aria-expanded="false"
               >
                 <Avatar className="w-8 h-8">
                   <AvatarFallback>
-                    {user?.email?.substring(0, 2).toUpperCase()}
+                    {user?.name?.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block text-left">
-                  <div className="text-sm font-medium">{user?.email}</div>
-                  <div className="text-xs text-muted-foreground">{profile?.role}</div>
+                  <div className="text-sm font-medium">{user?.name}</div>
+                  <div className="text-xs text-muted-foreground">{user?.fonction}</div>
                 </div>
               </Button>
             </DropdownMenuTrigger>
@@ -137,7 +137,7 @@ const Header = ({ activeItem = 'dashboard' }: HeaderProps) => {
                 Paramètres
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={signOut} 
+                onClick={logout} 
                 className="text-destructive"
                 role="menuitem"
               >
