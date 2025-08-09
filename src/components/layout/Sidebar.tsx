@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useSupabaseAuth } from '../../contexts/SupabaseAuthContext';
 import { settingsService, SystemSettings } from '../../services/settingsService';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -82,7 +82,7 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
     parametrages: true
   });
   const [settings, setSettings] = useState<SystemSettings | null>(null);
-  const { user } = useAuth();
+  const { profile } = useSupabaseAuth();
 
   // Charger les paramètres au montage
   useEffect(() => {
@@ -99,7 +99,7 @@ const Sidebar = ({ activeItem = 'dashboard', onItemClick }: SidebarProps) => {
 
   const filteredMenuItems = menuItems.filter(item => {
     // Vérifier les rôles
-    if (!item.roles.includes(user?.role || '')) {
+    if (!item.roles.includes(profile?.role || '')) {
       return false;
     }
     

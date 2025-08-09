@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { useSupabaseAuth } from '../contexts/SupabaseAuthContext';
+import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/auth/LoginForm';
 import { CustomizableDashboard } from '../components/dashboard/CustomizableDashboard';
 import Sidebar from '../components/layout/Sidebar';
@@ -38,7 +39,8 @@ const MonitoringDashboard = React.lazy(() =>
 );
 
 const AppContent = () => {
-  const { user } = useAuth();
+  const { user, profile, loading } = useSupabaseAuth();
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [isAndroidTV, setIsAndroidTV] = useState(false);
@@ -51,23 +53,26 @@ const AppContent = () => {
     setIsAndroidTV(isTV);
   }, []);
 
-  // Si pas d'utilisateur connecté, afficher le portail public ou le formulaire de connexion
-  if (!user) {
-    if (showLoginForm) {
-      return (
-        <LoginForm 
-          onBackToPortal={() => setShowLoginForm(false)} 
-          isAndroidTV={isAndroidTV}
-        />
-      );
+  // Redirect to auth page if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
     }
-    
+  }, [user, loading, navigate]);
+
+  // Show loading spinner while checking auth
+  if (loading) {
     return (
-      <PublicPortal 
-        onLoginClick={() => setShowLoginForm(true)}
-        isAndroidTV={isAndroidTV}
-      />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2">Chargement...</span>
+      </div>
     );
+  }
+
+  // Don't render if no user (will redirect)
+  if (!user) {
+    return null;
   }
 
   const renderCurrentPage = () => {
@@ -177,11 +182,7 @@ const AppContent = () => {
 };
 
 const Index = () => {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
+  return <AppContent />;
 };
 
 export default Index;
